@@ -1,0 +1,26 @@
+[package]
+name = "canister_ic_crates_blob"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[package.metadata.canic]
+app = "ic_crates"
+role = "blob"
+
+[lib]
+crate-type = ["cdylib"]
+test = false
+doctest = false
+
+[dependencies]
+candid.workspace = true
+canic.workspace = true
+canic-blob-service.workspace = true
+ic-cdk.workspace = true
+ic-memory.workspace = true
+
+[build-dependencies]
+canic.workspace = true

@@ -1,0 +1,8 @@
+canisters:
+  - name: registry
+  - name: blob
+
+environments:
+  - name: local
+    network: local
+    canisters: [registry, blob]

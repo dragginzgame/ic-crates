@@ -1,0 +1,43 @@
+[workspace]
+members = ["crates/ic-crates-protocol", "apps/ic_crates/registry", "apps/ic_crates/blob"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99.0"
+license = "MIT"
+
+[workspace.dependencies]
+candid = "0.10"
+canic = { path = "../canic/crates/canic", default-features = false }
+canic-blob-service = { path = "../canic/integrations/blob-service" }
+ic-blob-storage = { path = "../ic-blob-storage/crates/ic-blob-storage" }
+ic-blob-storage-contracts = { path = "../ic-blob-storage/crates/ic-blob-storage-contracts" }
+ic-cdk = "0.20.3"
+ic-crates-protocol = { path = "crates/ic-crates-protocol" }
+ic-memory = { path = "../ic-memory/crates/ic-memory" }
+icydb = { path = "../icydb/crates/icydb", default-features = false }
+semver = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+
+# Keep framework, database and blob storage on one memory runtime.
+# Timers/Metrics use published releases: their sibling development APIs currently
+# differ from the APIs consumed by Canic's local checkout.
+[patch.crates-io]
+ic-blob-storage = { path = "../ic-blob-storage/crates/ic-blob-storage" }
+ic-blob-storage-contracts = { path = "../ic-blob-storage/crates/ic-blob-storage-contracts" }
+ic-memory = { path = "../ic-memory/crates/ic-memory" }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.fast]
+inherits = "release"
+lto = "thin"
+codegen-units = 8

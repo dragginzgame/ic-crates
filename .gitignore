@@ -1,0 +1,8 @@
+/target/
+/.agents/
+/.aws/
+/.codex/
+.env
+.env.*
+/apps/ic_crates/.canic/
+/apps/ic_crates/.icp/
