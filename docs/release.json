@@ -1,11 +1,11 @@
 {
    "date" : "2026-10-12",
    "files" : {
-      "CHANGELOG.md" : "3a89db5a09b002cf2126df9142f5f83c0a40d830f547f5f1e4278d6953f0a93c",
-      "Cargo.lock" : "a22bace0b9e663a060086e85ad586c13ffd6ec27ebe80d778a6ad2719ed6b648",
-      "Cargo.toml" : "daba97384a7fc1049c75bdcc6294f12512e07c023d966f14b141957bacc0c111"
+      "CHANGELOG.md" : "acc6446f2055fc89222bf5aab54f90763561e901c4af6322b7146d249615e6af",
+      "Cargo.lock" : "ee24d7858c54e329af6783db9f962114aec9f2cfd689180e420d323047d1e455",
+      "Cargo.toml" : "ac940edc64972c14fc1031c6c2f03edebfc4328207485fead0ae470f68d0e600"
    },
    "format" : 1,
-   "source" : "3f2015d86a87e56d2eede5dfc7a70a6f0426f0c7",
-   "version" : "0.2.0"
+   "source" : "e930e8c55091845eaba350dcd38b0ad7ab6a24a2",
+   "version" : "0.2.1"
 }

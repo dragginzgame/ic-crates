@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.1]
+## [0.2.1] - 2026-10-12
 
 - Port crates.io dependency alias and transitive feature-splitting behavior, allowing underscore-prefixed aliases and keeping extended feature chains together in the Cargo index.
 - Qualify renamed optional dependencies and default/weak feature activation by publishing and consuming two crates with unmodified Cargo.
