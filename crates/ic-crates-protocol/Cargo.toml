@@ -2,9 +2,13 @@
 name = "ic-crates-protocol"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
+rust-version = "1.88.0"
 license.workspace = true
-publish = false
+repository.workspace = true
+description = "Cargo sparse-index formats and publication contracts for IC Crates"
+readme = "README.md"
+publish = true
+include = ["src/**", "README.md", "LICENSE"]
 
 [dependencies]
 candid.workspace = true

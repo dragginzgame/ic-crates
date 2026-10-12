@@ -1,4 +1,7 @@
 /target/
+/.tools/
+/.local/
+/.cargo/local-overrides.toml
 /.agents/
 /.aws/
 /.codex/

@@ -1,131 +1,123 @@
 # IC Crates
 
-A Rust package registry on the Internet Computer, built with local Canic,
-IcyDB, IC Blob Storage and IC Memory checkouts. Crate archives go directly to
-the blob provider; the registry stores metadata and publication evidence.
+A Rust package registry on the Internet Computer. Canic owns the managed app,
+IcyDB stores its catalog, and IC Blob Storage owns archive storage and completion
+verification. Default builds use released dependencies; sibling checkouts are
+optional development inputs.
 
-This is the first backend foundation. It has a controller-operated publication
-API and Cargo-compatible sparse-index/download routes. It has not been deployed
-or exercised against a real provider, and normal `cargo publish` is not connected
-yet. [Current validation and next work](docs/status/current.md).
+The foundation includes a controller-operated catalog, Cargo sparse-index and
+blob download routes, and a token-authenticated native `cargo publish` bridge.
+An unmodified Cargo client can publish, resolve, download and build through the
+bridge in local fixture tests. Deployed IC/provider acceptance remains unqualified.
+See [current evidence](docs/status/current.md).
 
 ## Components
 
 | Path | Responsibility |
 | --- | --- |
-| `crates/ic-crates-protocol` | Cargo index format, bounded metadata validation and shared registry DTOs |
-| `apps/ic_crates/registry` | IcyDB configuration/upload/version records, publication workflow and HTTP reads |
-| `apps/ic_crates/blob` | Dedicated Canic Blob Service shell, using upstream endpoints and lifecycle |
-| `apps/ic_crates/canic.toml` | One registry and one target-initialized blob component |
+| `crates/ic-crates-protocol` | Cargo upload/index formats, bounded metadata validation and Candid contracts |
+| `apps/ic_crates/registry` | IcyDB configuration/upload/version records, publication and HTTP reads |
+| `apps/ic_crates/blob` | Dedicated Canic Blob Service shell using upstream endpoints and lifecycle |
+| `apps/ic_crates/publisher` | Native Cargo HTTP bridge, archive validation, retained jobs and IC transport |
+| `apps/ic_crates/canic.toml` | Registry and target-initialized blob components |
 
-Canic owns the registry lifecycle and the single memory allocation pool. IcyDB
-participates synchronously after Canic restoration and owns its journaled catalog.
-All production dependencies share one Memory identity and one Timers identity.
-The blob shell has its own canister identity and memory pool.
+Canic owns lifecycle and the memory allocation pool; IcyDB participates
+synchronously after restoration. Each canister graph has one Memory and Timers
+identity. Released Canic 0.111 and IcyDB 0.270.3 share Timers 0.17. IcyDB 0.271's
+Timers 0.19 needs coordinated Canic adoption before selection here.
 
-The root Cargo catalog uses sibling paths for Canic, IcyDB, Blob Storage and
-Memory. Timers and Metrics currently use their published versions: their sibling
-development APIs differ from those consumed by local Canic. `Cargo.lock` records
-the selected graph; path dependencies remain tied to the contents of the local
-checkouts. No sibling source files are owned by this repository.
+## Publication
 
-## Publication flow
+1. Install the managed app using matching Canic tooling. Initialize Blob Storage
+   with its target-bound `ServiceInstallationInput`, then enroll the registry
+   canister as a tenant using the upstream composition workflow.
+2. A controller calls `registry_configure` once with the blob service, namespace,
+   verifier, provider project and HTTPS provider origin. Exact replay succeeds;
+   changing the immutable configuration is refused.
+3. Run the [Cargo bridge](docs/cargo-publish.md) with explicit IC transport,
+   controller identity, token, private spool and Blob Storage worker selections.
+   Cargo sends its metadata and archive to `PUT /api/v1/crates/new`.
+4. The bridge validates framing and archive structure, computes both raw SHA-256
+   and the upstream provider manifest, and translates metadata to index format.
+   It retains the original bytes and permission before calling
+   `registry_admit_upload`. The registry saves its intent before upstream admission.
+5. The selected worker prepares that exact manifest, sends archive bytes directly
+   to the provider and obtains the configured verifier's completion attestation
+   through Blob Storage's maintained tooling. SDK/browser state and recovery
+   remain with that owner. A worker exit alone never proves completion.
+6. The bridge submits `registry_publish`. The registry authenticates bounded
+   attestation evidence, checks raw archive SHA-256 and a currently live reference,
+   derives the download URL with the upstream encoder, then atomically commits.
+   Cargo receives success only after catalog confirmation.
 
-1. Build/install the managed Canic app. Bind the blob component's target-specific
-   `ServiceInstallationInput` using Canic's existing initialization mechanism.
-   Its service identity, namespace, provider project and completion verifier must
-   match the registry's configuration. Enroll the registry canister as a blob tenant.
-2. A registry controller calls `registry_configure` once with the blob service,
-   verifier, namespace, provider project and HTTPS provider origin. Exact replay
-   succeeds; changing this configuration is refused.
-3. Prepare a `.crate` archive and its manifest using Blob Storage's existing tools.
-   The upload permission names the registry as tenant and an external signer as
-   uploader. Call `registry_admit_upload`: the registry saves the full intent in
-   IcyDB before granting permission through the blob service. Use
-   `registry_upload_admission` to inspect an uncertain outcome with the same intent.
-4. The uploader prepares the manifest directly with the blob service and sends
-   the bytes directly to Caffeine. The configured verifier checks the content and
-   records its attestation through the upstream completion flow.
-5. Call `registry_publish` with the original permission and an **index-format** JSON
-   entry. The registry authenticates the configured blob service, validates its
-   bounded attestation reply, compares the verified raw archive SHA-256 with Cargo's
-   checksum, and obtains a current live-reference descriptor. It constructs the
-   download URL from the configured origin and upstream provider URL encoder.
-6. The registry commits the version atomically. Exact replay succeeds; changing
-   metadata, upload permission or download URL for that version is refused.
+Retries bind the original metadata, scope, archive digest and permission. They
+check catalog completion without dispatching admission or the worker again.
+Missing evidence stops publication; it never authorizes another provider upload.
+The original controller Candid endpoints also remain available for operator work.
 
-Cargo's checksum is raw archive SHA-256, in plain lowercase hex. It is **not** the
-provider's tree root. Dependencies from crates.io require the explicit index URL
-`https://github.com/rust-lang/crates.io-index`; an index dependency's `registry: null`
-means this registry. Publish-API metadata has a different dependency field layout
-and must eventually be translated by the upload bridge.
+Mutations currently require a controller. The bridge's private token represents
+that operator's authority; publisher accounts, per-crate ownership, search and
+browsing remain future work. Published references are retained: yanking changes
+selection and keeps downloads available. No archive deletion/release endpoint exists.
 
-All registry mutations currently require a controller. The controller is responsible
-for checking that archive contents and Cargo metadata agree; archive parsing and
-package validation belong to the next host-side publish bridge. There are no public
-publisher accounts, tokens, ownership transfers or search API yet.
+## Cargo configuration
 
-Published blob references are retained. Yanking changes dependency selection and
-preserves the archive URL. There is no registry release/delete endpoint. A descriptor
-is an observation rather than a permanent availability guarantee; provider retention
-and consumer reference coordination still need integration qualification.
-
-## Cargo reads
-
-After managed installation and publication, configure an alternative registry:
+Use the bridge's public HTTPS origin for publishing and reads:
 
 ```toml
 # .cargo/config.toml
+[registry]
+global-credential-providers = ["cargo:token"]
+
 [registries.ic-crates]
-index = "sparse+https://REGISTRY_CANISTER_ID.icp0.io/index/"
+index = "sparse+https://REGISTRY_BRIDGE_HOST/index/"
 ```
-
-```toml
-# Cargo.toml
-[dependencies]
-example = { version = "0.1", registry = "ic-crates" }
-```
-
-The registry serves `/index/config.json`, Cargo's sharded index paths, and
-`/api/v1/crates/{crate}/{version}/download`. The download route redirects to blob
-storage. `config.json` deliberately omits `api` until the Cargo publish API exists.
-
-For this foundation, `http_request` asks the gateway to upgrade reads to update
-execution, and `http_request_update` reads IcyDB. This avoids serving an uncertified
-query index but makes reads use consensus and consume cycles. Certified queries,
-ETags, caching, streaming and gateway/Cargo integration proof are still required.
-The initial limits are 64 KiB metadata per version, 128 versions and 1 MiB of index
-data per crate, and 1 GiB per archive. Names are lowercase; hyphen/underscore
-variants share one namespace. Versions with semver build metadata are refused.
-
-## Local development
-
-Keep sibling repositories beside this checkout and use Rust 1.99.0.
 
 ```sh
-make fmt
-make test-protocol
-make check
-make test-catalog
+cargo login --registry ic-crates
+cargo publish --registry ic-crates
 ```
 
-The current Canic development checkout is undergoing Auth integration work;
-normal Canic-dependent checks stop on five upstream dead-code findings.
-To inspect this foundation while that work continues, the recorded diagnostic
-checks used `RUSTFLAGS='--cap-lints=warn'`. That override is not persisted in the
-build configuration and does not establish strict upstream validation. Consult
-the current handoff before treating these passes as evidence for later sibling contents.
+A dependent package uses `example = { version = "0.1", registry = "ic-crates" }`.
+The bridge advertises `api` and proxies catalog reads through authenticated replica
+updates. Direct canister index reads remain available at
+`sparse+https://REGISTRY_CANISTER_ID.icp0.io/index/`, with no upload API advertised.
+Downloads redirect to Blob Storage. Cargo checksums use raw archive SHA-256,
+independent of the provider tree root; dependency registry URLs are preserved.
 
-Managed Wasm builds must use the matching **0.111** Canic CLI rather than direct
-Cargo Wasm builds. The discovered local CLI was 0.110.54 and was not used to build
-these components. Once the matching CLI and upstream graph are ready:
+Reads currently use HTTP query-to-update upgrade. Certified queries, ETags and
+caching remain open. Catalog limits are 64 KiB per version, 128 versions and
+1 MiB per crate index; archive admission is capped at 1 GiB. The bridge enforces
+operator-selected lower limits and bounded decompression. Names are lowercase;
+hyphen/underscore variants share one namespace. SemVer build metadata is refused.
+
+## Development and release readiness
+
+Use Rust 1.99.0; no sibling checkout is needed for standard checks.
+
+```sh
+make install-tools
+make deps
+make ci
+make install-validation-tools # Linux
+make lint check-secrets       # Linux
+```
+
+[Development setup](docs/development.md) documents supported hosts, minimum Rust
+versions, local overrides and the reviewed Shared Tooling snapshot. Native Cargo
+fixture tests do not qualify installed canisters or deployed provider behavior.
+Managed Wasm builds use the matching **0.111** Canic CLI:
 
 ```sh
 canic build ic_crates --workspace . --config apps/ic_crates/canic.toml \
   --icp-root apps/ic_crates --profile fast --json
 ```
 
-Building does not install the app or configure/fund a provider. Use Canic's
-[blob composition guide](https://github.com/dragginzgame/canic/blob/main/docs/features/blob-storage/README.md) and Blob
-Storage's [operator guide](https://github.com/dragginzgame/ic-blob-storage/blob/main/docs/operator-guide.md) for their
-existing initialization, enrollment, upload and verifier contracts.
+Only `ic-crates-protocol` is a crates.io candidate. `make package-check` verifies
+its archive without uploading it. Versions, release commits, tags, pushes,
+package publication and deployments are user-owned; readiness checks perform none
+of those effects. See [user-operated release/publication](docs/publishing.md).
+
+Use Canic's [blob composition guide](https://github.com/dragginzgame/canic/blob/main/docs/features/blob-storage/README.md)
+and Blob Storage's [operator guide](https://github.com/dragginzgame/ic-blob-storage/blob/main/docs/operator-guide.md)
+for installation, enrollment, transfer and verifier contracts.

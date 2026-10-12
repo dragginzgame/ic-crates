@@ -102,7 +102,7 @@ impl IndexEntry {
             }
             if let Some(registry) = &dep.registry {
                 let url = url::Url::parse(registry).map_err(|_| RegistryError::InvalidMetadata)?;
-                if url.scheme() != "https"
+                if !matches!(url.scheme(), "https" | "sparse+https")
                     || url.host_str().is_none()
                     || !url.username().is_empty()
                     || url.password().is_some()

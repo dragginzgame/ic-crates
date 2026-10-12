@@ -1,84 +1,95 @@
 # Current handoff — 2026-10-12
 
-The empty repository now has a controller-operated registry foundation. This
-batch adds executable code, focused tests, a locked local dependency graph,
-managed app configuration and development instructions. No deployment, provider
-effect, release or sibling source edit was performed. The user subsequently
-authorized publishing this initial source as the public GitHub repository
-`dragginzgame/ic-crates`; this does not change the validation limits below.
+The repository contains a controller-operated IC registry foundation and a native
+Cargo upload bridge. Release preparation now uses a reviewed Shared Tooling
+snapshot and released dependencies. The public repository is
+[dragginzgame/ic-crates](https://github.com/dragginzgame/ic-crates).
+The initial source is pushed; subsequent implementation remains in the working
+tree for user review. Versions remain 0.1.0. No project release, tag, new commit,
+package publication, deployment, provider effect or sibling edit was performed.
+The user explicitly retains all release authority.
 
 ## Implemented
 
-- Canic registry component with IcyDB as its synchronous lifecycle participant.
-- One shared registry memory allocation pool and one Memory/Timers package identity.
-- Dedicated `canic-blob-service` component with target-bound application initialization.
-- Journaled configuration, exact upload permission intents and immutable version records.
-- Controller-only configuration, upload admission, admission inspection, publication and yanking.
-- Bounded upstream attestation decoding with explicit service/namespace/verifier binding.
-- Raw archive SHA-256 comparison and a current live-reference descriptor before atomic publication.
-- Cargo sparse-index paths, configuration and blob download redirects.
-- HTTP query-to-update upgrade until certified query responses are implemented.
+- Canic registry lifecycle with IcyDB as synchronous participant and one Memory/Timers identity.
+- Dedicated target-initialized Canic Blob Service shell.
+- Journaled immutable configuration, exact upload intents and version catalog.
+- Controller-only configuration, admission, inspection, publication and yanking.
+- Bounded authenticated attestation decoding, raw SHA-256 check and live-reference observation before atomic publication.
+- Cargo sparse index, blob download redirects and HTTP query-to-update upgrade.
+- Native token-authenticated Cargo upload endpoint with explicit IC transport and operator-owned worker boundary.
+- Bounded framing, gzip/tar/path checks and matching archive manifest; publish-to-index metadata translation.
+- Upstream Caffeine manifest hashing; IC Host FS durable files and exclusive descriptor locks.
+- Original archives, permissions, scope and signed requests retained before dispatch; retries never redispatch the worker.
+- Standalone protocol packaging, pinned dependency/tool policy, host/MSRV CI and user-operated release/publication adapters.
 
-The archive is never stored in the catalog. The uploader and verifier still run
-through Blob Storage's existing tools; the registry grants permission from its
-tenant identity. Published references have no registry deletion/release path.
+See [bridge setup, worker contract and recovery](../cargo-publish.md),
+[development](../development.md) and [user-operated release commands](../publishing.md).
+The bridge requires a reviewed provider driver for the operator's browser/signers
+and installation; it does not ship a fake provider in the production binary.
+Only the protocol library is a crates.io candidate; application packages are private.
 
-## Selected source graph
+## Selected released graph
 
 | Dependency | Selection |
 | --- | --- |
-| Canic and its Blob adapter | Local sibling, 0.111.0 |
-| IcyDB family | Local sibling, 0.271.0 |
-| IC Blob Storage/contracts | Local sibling, 0.22.13 |
-| IC Memory | Local sibling, 0.35.17 |
-| IC Timers | Published 0.19.3 |
-| IC Metrics | Published 0.7.3 |
+| Canic and Blob adapter | 0.111.0 |
+| IcyDB family | 0.270.3 |
+| IC Blob Storage/contracts | 0.22.13 |
+| IC Memory | 0.35.18 |
+| IC Timers | 0.17.14 |
+| IC Agent | 0.49.2, native bridge only |
+| IC Host FS/artifacts | 0.15.0, native bridge only |
+| Shared Tooling | 0.9.5, b1630b89482cc6071fc928a86962d79c9c11fdb7 |
 
-The local Timers and Metrics checkouts contain API changes not yet consumed by
-Canic. Their published selections avoid `register_once` signature and missing
-`record_sample` failures. The initial normal native check stopped on five denied
-dead-code findings in Canic's unfinished Auth integration.
+Released Canic and IcyDB 0.270 share Timers 0.17. IcyDB 0.271's Timers 0.19
+requires coordinated Canic adoption. Fresh-checkout builds need no sibling paths
+or warning caps. The sibling Shared Tooling checkout's dirty work was preserved;
+89 selected files come from an independently checked clean committed snapshot.
 
-## Validation
+## Validation evidence
 
-- Formatting check passes for all three application-owned packages.
-- Three protocol tests pass without a lint override.
-- All five protocol/catalog/workflow tests passed in a diagnostic build
-  with `RUSTFLAGS='--cap-lints=warn'`.
-- Both canister components compiled natively in that diagnostic graph.
-- Targeted diagnostic Clippy completes with no application-owned warnings;
-  the five upstream Canic warnings remain. No lint relaxation is committed.
-- Native database tests cover durable configuration, upload intent binding,
-  exact publication replay, immutable-version conflicts, namespace collisions,
-  HTTP index/download routing and yanking without archive removal.
-- Publication evidence tests distinguish provider root from attested raw checksum
-  and reject missing/fenced evidence.
+Focused native protocol/catalog/bridge tests pass, including an unmodified Cargo
+client that publishes to a loopback substitute, polls the sparse index, downloads
+and compiles/runs a consuming crate. Recovery checks cover a failed worker, a lost
+committed reply, conflicting metadata and incomplete retained intent. Archive
+checks reject truncation, trailing bytes, wrong manifest identity, traversal,
+symlinks, corrupt CRC and exceeded bounds. Strict targeted Clippy passes.
 
-The final change gives `registry_publish` an explicit 72 KiB Canic payload budget,
-above its default 16 KiB, and bounds canonical serialized index lines to 64 KiB.
-Protocol tests and formatting pass after that change. A backend rerun encountered
-a temporary syntax error during concurrent Canic edits. Once that syntax was
-corrected upstream, the final normal `make check` still stopped on the five Auth
-dead-code findings. All five diagnostic tests were then re-run and passed with
-the final payload declaration and size bound. The warning cap remains an explicit
-diagnostic-only command environment; no committed lint policy is weakened.
+`make ci` passes all 15 delivery targets: snapshot/tool integrity, metadata,
+runtime identities, pins, documentation links, formatting, native checks/tests,
+strict Clippy, rustdoc, both Rust minimums, protocol archive verification and
+isolated release-command/recovery fixtures. Ten unit/wire tests and one doctest
+pass. Loopback networking is required by the real Cargo fixture; a restricted
+sandbox run refused socket creation, and the complete run passed with local
+networking enabled. Failure logs remain under `target/validation-failures`;
+the standard logger now retains complete runs under `target/validation-runs`.
+The protocol package verifies independently (11 files, about 13 KiB compressed).
+Linux ShellCheck, actionlint, Git-history Gitleaks and `git diff --check` pass.
+The reviewed
+CI matrix configures Ubuntu 24.04 and macOS 15 on Intel and Apple Silicon;
+local Linux evidence does not establish macOS qualification. Standard validation
+performs no production release or publication. Release adapter tests use isolated
+throwaway source/bare-remote Git fixtures, never the real checkout's index or refs.
 
-These are native composition and state tests. They do not establish live IC
-lifecycle, controller rejection, gateway verification, real Cargo consumption,
-or real provider completion. No PocketIC or deployment ran. The discovered
-Canic CLI is 0.110.54; the app requires a matching 0.111 toolchain for managed builds.
+These are native state/wire/recovery checks. They do not establish installed IC
+lifecycle, deployed controller rejection, gateway behavior, real provider transfer,
+browser acceptance or operational retention. No PocketIC/deployment ran. The
+production bridge signs explicit IC requests, but IC/provider end-to-end acceptance
+needs a separately configured environment and reviewed worker. Certified query
+index responses, caching and publisher ownership/accounts remain open.
 
-## Next coherent batch
+## Next qualification
 
-1. Qualify managed Wasm installation and the registry/blob tenant composition
-   with matching Canic tooling and IC Testkit-owned PocketIC infrastructure.
-2. Add a host-side Cargo publish bridge: bounded archive validation, publish
-   metadata translation, direct provider upload and verifier completion.
-3. Prove an unmodified Cargo client can resolve and build a crate through the
-   gateway; implement certified query index responses and caching.
-4. Add publisher accounts/tokens and crate ownership, then search and browsing.
+1. Bind the operator's upstream Blob Storage prepare/browser/verifier driver and
+   prove one exact archive journey in a configured IC test environment.
+2. Qualify managed Wasm installation and registry/blob tenant composition with
+   matching Canic tooling and IC Testkit-owned PocketIC infrastructure.
+3. Qualify a real gateway Cargo consumer, then add certified index queries/caching.
+4. Add publisher accounts, crate ownership, search and browsing.
 
-Retain the original upload permissions and package bytes across interrupted
-work. An absent receipt is not evidence that a provider upload can be repeated.
-Cross-release migration or retained-identity deployment is not promised by this
-initial schema; follow each sibling's maintained lifecycle contracts.
+Preserve original upload permissions, package bytes, signed claims, browser
+profiles and provider/verifier journals across interruptions. An absent receipt
+never authorizes another transfer. Yanking preserves published references.
+Cross-release retained-identity upgrades are not qualified for the initial schema;
+follow upstream lifecycle and obligation-disposition contracts before reinstalling.

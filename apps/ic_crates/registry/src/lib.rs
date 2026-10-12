@@ -96,7 +96,7 @@ fn registry_yank(name: String, version: String, yanked: bool) -> Result<(), Regi
 /// Queries ask the gateway to upgrade to consensus-backed update execution.
 #[ic_cdk::query]
 fn http_request(_: http::HttpRequest) -> http::HttpResponse {
-    http::HttpResponse::upgrade()
+    http::upgrade()
 }
 
 /// Read the durable sparse index or redirect to the retained immutable blob URL.

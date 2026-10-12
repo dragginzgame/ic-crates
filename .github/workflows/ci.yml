@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - name: Prepare evidence directory
+        run: |
+          task_tmpdir="$RUNNER_TEMP/ic-crates-validation"
+          mkdir -p "$task_tmpdir"
+          echo "TMPDIR=$task_tmpdir" >> "$GITHUB_ENV"
+      - name: Prepare development compiler
+        run: rustup toolchain install --profile minimal --component rustfmt --no-self-update
+      - name: Prepare advertised minimum compilers
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal --no-self-update
+          rustup toolchain install 1.91.0 --profile minimal --no-self-update
+      - name: Prepare complete common toolset
+        run: make install-tools 2>&1 | tee "$TMPDIR/tools-install.log"
+      - name: Prepare locked dependency cache
+        run: make deps
+      - name: Run complete native delivery gate
+        run: make ci
+      - name: Retain failed tool setup evidence
+        if: ${{ failure() && !cancelled() }}
+        uses: ./.github/actions/retain-failure-evidence
+        with:
+          name: tools-${{ matrix.os }}-${{ github.run_attempt }}
+          temp-root: ${{ runner.temp }}/ic-crates-validation
+          repository-root: ${{ github.workspace }}
+          compact-successful-tools: 'true'
+      - name: Retain failed validation logs
+        if: ${{ failure() && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: validation-${{ matrix.os }}-${{ github.run_attempt }}
+          path: |
+            target/validation-runs/
+            target/validation-failures/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  lint-and-security:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare pinned lint and security tools
+        run: make install-validation-tools
+      - name: Check shell, workflow and Git history
+        run: make lint check-secrets
