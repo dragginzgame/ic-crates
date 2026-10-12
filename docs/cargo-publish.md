@@ -1,6 +1,6 @@
 # Cargo upload bridge
 
-`ic-crates-publisher` receives Cargo's publish API while large archives bypass IC
+`ic-crates` receives Cargo's publish API while large archives bypass IC
 message bodies. The registry canister continues to own admission intent and the
 final catalog transaction. Blob Storage continues to own provider transfer,
 verification, browser journals, references and accounting.
@@ -16,7 +16,7 @@ registry URLs remain explicit. Extended feature syntax receives index schema 2.
 ## Explicit setup
 
 Install/enroll/configure the registry and Blob Service first. Build the native
-bridge with `cargo build --locked -p ic-crates-publisher`. Create a private
+bridge with `cargo build --locked -p ic-crates`. Create a private
 absolute spool directory with mode 0700 and a mode-0600 token file containing
 exactly 32 independently random **binary** bytes. Cargo uses the lowercase
 64-character hex representation of those bytes, supplied through `cargo login`
@@ -46,7 +46,7 @@ Supply one JSON configuration file, replacing every example path and principal:
 }
 ```
 
-Run `target/debug/ic-crates-publisher /absolute/path/bridge.json`. The PEM must
+Run `target/debug/ic-crates /absolute/path/bridge.json`. The PEM must
 sign as a registry controller; it does not impersonate the canister tenant or
 uploader. Ed25519 PEM is the supported bridge signer format. The worker selects
 its separate uploader/verifier identities. Bind only loopback; place a trusted
@@ -133,7 +133,7 @@ The spool owns retained-archive and job-count budgets and never evicts old evide
 Budget additional space for metadata, signed replies, transient incoming archives
 and the worker's independently bounded profiles/journals.
 
-`cargo test -p ic-crates-publisher` exercises framing, malformed archive rejection,
+`cargo test -p ic-crates` exercises framing, malformed archive rejection,
 worker failure and lost-catalog-reply recovery. Its real Cargo fixture publishes,
 polls the index, downloads and compiles a consumer against a loopback substitute.
 It performs no production catalog mutation, real provider effect or crates.io

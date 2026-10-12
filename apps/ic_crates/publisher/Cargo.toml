@@ -1,12 +1,14 @@
 [package]
-name = "ic-crates-publisher"
+name = "ic-crates"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Controller-operated Cargo upload bridge for IC Crates"
-publish = false
+readme = "README.md"
+publish = true
+include = ["src/**", "README.md", "LICENSE"]
 
 [dependencies]
 candid.workspace = true

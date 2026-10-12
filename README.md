@@ -113,8 +113,12 @@ canic build ic_crates --workspace . --config apps/ic_crates/canic.toml \
   --icp-root apps/ic_crates --profile fast --json
 ```
 
-Only `ic-crates-protocol` is a crates.io candidate. `make package-check` verifies
-its archive without uploading it. Versions, release commits, tags, pushes,
+`ic-crates` (the native CLI/library) and `ic-crates-protocol` are crates.io
+candidates; canister packages remain private. After publication, install the
+bridge with `cargo install --locked ic-crates`, then run
+`ic-crates /absolute/path/bridge.json`. The former command `ic-crates-publisher`
+has been renamed. `make package-check` verifies both archives together without
+uploading them. Versions, release commits, tags, pushes,
 package publication and deployments are user-owned; readiness checks perform none
 of those effects. See [user-operated release/publication](docs/publishing.md).
 

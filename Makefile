@@ -2,7 +2,7 @@
 SHARED_TOOLING_ROOT := $(CURDIR)
 include make/consumer.mk
 
-PACKAGES = -p ic-crates-protocol -p canister_ic_crates_registry -p canister_ic_crates_blob -p ic-crates-publisher
+PACKAGES = -p ic-crates-protocol -p canister_ic_crates_registry -p canister_ic_crates_blob -p ic-crates
 export CARGO_TARGET_DIR := $(CURDIR)/target
 export VALIDATION_LOG_DIR ?= $(CURDIR)/target/validation-runs
 SHELLCHECK ?= $(CURDIR)/.tools/ci/bin/shellcheck
@@ -11,7 +11,7 @@ GITLEAKS ?= $(CURDIR)/.tools/ci/bin/gitleaks
 
 .PHONY: help version tasks deps check test test-protocol test-catalog clippy docs-check \
         metadata-check runtime-check check-pins check-doc-links ci msrv-check \
-        package-check publish-dry-run publish check-release-commands test-release \
+        package-check publish-dry-run publish check-release-commands test-release test-publish \
         release-version release-preflight release-verify release-prepare-version \
         release-prepared-check release-files release-commit-check release-committed-check \
         release-tagged-check release-push-check install-validation-tools lint check-secrets
@@ -21,9 +21,9 @@ help:
 	@echo 'fmt / fmt-check / install-hooks: shared formatting and pre-commit activation'
 	@echo 'check / test / clippy / docs-check: focused Rust development checks'
 	@echo 'ci: complete native delivery gate with retained validation logs'
-	@echo 'package-check / publish-dry-run: verify the protocol archive before publication'
+	@echo 'package-check / publish-dry-run: verify protocol and CLI archives before publication'
 	@echo 'release-patch / release-minor / release-major: user-operated shared release workflow'
-	@echo 'publish: user-operated crates.io publication of the exact tagged protocol package'
+	@echo 'publish: user-operated crates.io publication of the exact tagged protocol, then CLI'
 	@echo 'tasks / cloc: shared maintenance catalog and workspace Rust LOC'
 
 version release-version:
@@ -36,8 +36,10 @@ deps:
 	+cargo fetch --locked
 
 metadata-check:
-	+cargo metadata --offline --locked --no-deps --format-version 1 > /dev/null
+	+cargo metadata --offline --locked --no-deps --format-version 1 | jq -e \
+		'([.packages[] | select(.publish != []) | .name] | sort) == ["ic-crates", "ic-crates-protocol"] and any(.packages[]; .name == "ic-crates" and any(.targets[]; .kind == ["bin"] and .name == "ic-crates"))' > /dev/null
 	cmp LICENSE crates/ic-crates-protocol/LICENSE
+	cmp LICENSE apps/ic_crates/publisher/LICENSE
 
 runtime-check:
 	+bash scripts/ci/check-runtime-identities.sh
@@ -46,7 +48,7 @@ check:
 	+cargo check --offline --locked $(PACKAGES) --all-targets
 
 test:
-	+cargo test --offline --locked -p ic-crates-protocol -p canister_ic_crates_registry -p ic-crates-publisher
+	+cargo test --offline --locked -p ic-crates-protocol -p canister_ic_crates_registry -p ic-crates
 
 test-protocol:
 	+cargo test --offline --locked -p ic-crates-protocol
@@ -66,7 +68,8 @@ check-pins:
 check-doc-links:
 	perl scripts/ci/check-documentation-links.pl --root "$(CURDIR)" \
 		README.md AGENTS.md CHANGELOG.md docs/status/current.md docs/development.md \
-		docs/publishing.md docs/cargo-publish.md crates/ic-crates-protocol/README.md DRAGGINZGAME.md \
+		docs/publishing.md docs/cargo-publish.md crates/ic-crates-protocol/README.md \
+		apps/ic_crates/publisher/README.md DRAGGINZGAME.md \
 		rules/*.md tasks/*.md audits/*.md docs/principles/*.md docs/supported-hosts.md \
 		docs/local-setup.md docs/ic-tools.md docs/make-interface.md docs/releases.md \
 		docs/consuming-snapshots.md docs/verification-helpers.md docs/tag-maintenance.md docs/provenance.md
@@ -76,13 +79,13 @@ msrv-check:
 	+cargo +1.91.0 check --offline --locked $(PACKAGES) --all-targets
 
 package-check publish-dry-run:
-	+cargo package --offline --locked -p ic-crates-protocol --allow-dirty
+	+cargo package --locked --registry crates-io -p ic-crates-protocol -p ic-crates --allow-dirty
 
 ci:
 	+@bash scripts/ci/run-validation-targets.sh --fail-fast \
 		shared-tooling-check tools-check metadata-check runtime-check check-pins \
 		check-doc-links fmt-check check test clippy docs-check msrv-check \
-		package-check check-release-commands test-release
+		package-check check-release-commands test-release test-publish
 
 check-release-commands:
 	@bash scripts/ci/check-release-commands.sh "$(CURDIR)" \
@@ -91,6 +94,9 @@ check-release-commands:
 
 test-release:
 	@bash scripts/release/test-release.sh
+
+test-publish:
+	@bash scripts/release/test-publish.sh
 
 release-preflight release-verify release-prepare-version release-prepared-check \
 release-files release-commit-check release-committed-check release-tagged-check release-push-check:

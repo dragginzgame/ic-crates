@@ -10,7 +10,7 @@ this canister graph can select it.
 ## Setup
 
 Prepare Rust 1.99.0 for development, Rust 1.88.0 for the public protocol library,
-and Rust 1.91.0 for the application components. Cargo, Git, Bash, Perl, curl,
+and Rust 1.91.0 for the public `ic-crates` CLI/library and canister components. Cargo, Git, Bash, Perl, curl,
 tar and xz are system prerequisites. macOS workflows use native Apple Silicon
 or Intel tools. See the reviewed [shared setup guide](local-setup.md).
 
@@ -36,13 +36,18 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make fmt`, `make fmt-check` | Shared Cargo sorting and Rust formatting |
 | `make ci` | Complete native delivery gate with retained failure logs |
 | `make msrv-check` | Protocol at 1.88 and applications at 1.91 |
-| `make package-check` | Package and compile the standalone protocol archive |
+| `make package-check`, `make publish-dry-run` | Package and compile both public archives together |
+| `make test-publish` | Test publication order, observation guards and interrupted uploads with local substitutes |
 | `make install-validation-tools`, `make lint check-secrets` | Linux shell/workflow lint and Git history secret scan |
 | `make shared-tooling-check`, `make check-pins` | Snapshot integrity and declared dependency policy |
 | `make tasks`, `make cloc` | Shared maintenance catalog and Rust LOC |
 
 Run relevant narrow checks while coding; complete `make ci` and Linux lint/security
 before delivery. No standard validation command publishes, releases or deploys.
+Package checks use Cargo's normal registry handling to verify the CLI against
+the newly staged protocol archive. They preserve `--locked`; explicitly offline
+callers can fail at Cargo's staged-registry unpack step even with external caches
+prepared. No check changes package versions or uses `--no-verify`.
 The [CI workflow](../.github/workflows/ci.yml) qualifies Ubuntu 24.04, macOS 15
 Apple Silicon and macOS 15 Intel. Configuring CI is not evidence that it has run.
 The native bridge's unmodified Cargo fixture runs in the standard tests.

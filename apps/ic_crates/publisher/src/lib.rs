@@ -1,5 +1,7 @@
 //! Controller-operated Cargo HTTP bridge. Provider transfer has one selected owner.
 
+#![doc = include_str!("../README.md")]
+
 mod config;
 mod registry;
 mod server;

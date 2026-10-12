@@ -12,8 +12,9 @@ Read [the current handoff](docs/status/current.md), then apply the reviewed
 - Default builds use released dependencies and the root lockfile. Each canister
   graph needs one Memory and one Timers identity. Explicit local development
   overrides cannot qualify publication or releases.
-- Only the protocol library is a crates.io publication candidate; canister Cargo
-  packages remain private. Release preparation does not change versions or Git refs.
+- `ic-crates-protocol` and the native `ic-crates` CLI/library are crates.io
+  publication candidates; canister packages remain private. Release preparation
+  does not change versions or Git refs. Publish the protocol dependency first.
 - Use edition 2024 and directory modules. Keep DTOs passive, records in `design/`,
   catalog operations in `ops/`, orchestration in `workflow/`, and auth at endpoints.
 - Persist exact upload intent before dispatch. A missing reply never proves safe

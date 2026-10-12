@@ -10,7 +10,7 @@ root="$PWD"
 export CARGO_TARGET_DIR="$root/target"
 export PATH="$root/.tools/host/bin:$root/.tools/ic/bin:$root/.tools/rust/common/bin:$PATH"
 files=(Cargo.toml Cargo.lock CHANGELOG.md docs/release.json)
-packages=(ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates-publisher)
+packages=(ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates)
 release_backup=''
 release_had_receipt=no
 

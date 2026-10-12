@@ -56,7 +56,12 @@ git commit -qm 'Fixture source'
 git push -q -u origin main
 source="$(git rev-parse HEAD)"
 previous="$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)"
-candidate="$(bash scripts/ci/next-release-version.sh "$previous" patch)"
+candidate="$(awk '/^## \[[0-9]+\.[0-9]+\.[0-9]+\]$/ { gsub(/^## \[|\]$/, ""); print; exit }' CHANGELOG.md)"
+kind=''
+for component in patch minor major; do
+    if [[ "$candidate" == "$(bash scripts/ci/next-release-version.sh "$previous" "$component")" ]]; then kind="$component"; break; fi
+done
+[[ -n "$kind" ]] || { echo 'Fixture requires one valid next-version draft.' >&2; exit 1; }
 date="$(date -u +%Y-%m-%d)"
 export RELEASE_SOURCE="$source" RELEASE_PREVIOUS="$previous" RELEASE_VERSION="$candidate" RELEASE_DATE="$date"
 cp Cargo.lock "$fixture/original.lock"
@@ -70,7 +75,7 @@ git reset -q HEAD -- unrelated.txt
 rm unrelated.txt
 unset RELEASE_SOURCE RELEASE_PREVIOUS RELEASE_VERSION RELEASE_DATE
 
-if MOCK_GATE_FAILURE=1 make --no-print-directory release-patch > "$fixture/failed-gate.log" 2>&1; then
+if MOCK_GATE_FAILURE=1 make --no-print-directory "release-$kind" > "$fixture/failed-gate.log" 2>&1; then
     echo 'A failed validation gate released metadata.' >&2; exit 1
 fi
 [[ "$(git rev-parse HEAD)" == "$source" ]]
@@ -78,7 +83,7 @@ fi
 if git rev-parse --verify "refs/tags/v$candidate" >/dev/null 2>&1; then
     echo 'Failed validation created a tag.' >&2; exit 1
 fi
-make --no-print-directory release-patch > "$fixture/release.log" 2>&1
+make --no-print-directory "release-$kind" > "$fixture/release.log" 2>&1
 commit="$(git rev-parse HEAD)"
 [[ "$commit" != "$source" ]]
 [[ "$(git log -1 --format=%P)" == "$source" ]]
@@ -88,7 +93,7 @@ bash scripts/ci/check-release-tag.sh "$commit" "$candidate"
 [[ "$(git --git-dir="$fixture/remote.git" rev-parse "refs/tags/v$candidate^{commit}")" == "$commit" ]]
 perl scripts/release/metadata.pl check-commit "$commit" "$source" "$candidate" "$date"
 perl scripts/ci/rewrite-local-lock-versions.pl Cargo.lock "$candidate" "$previous" \
-    ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates-publisher > "$fixture/restored.lock"
+    ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates > "$fixture/restored.lock"
 cmp "$fixture/original.lock" "$fixture/restored.lock"
 make --no-print-directory release-resume VERSION="$candidate" > "$fixture/resume.log" 2>&1
 [[ "$(git rev-parse HEAD)" == "$commit" ]]

@@ -1524,7 +1524,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-crates-publisher"
+name = "ic-crates"
 version = "0.1.1"
 dependencies = [
  "candid",

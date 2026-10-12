@@ -4,10 +4,12 @@ The repository contains a controller-operated IC registry foundation and a nativ
 Cargo upload bridge. Release preparation now uses a reviewed Shared Tooling
 snapshot and released dependencies. The public repository is
 [dragginzgame/ic-crates](https://github.com/dragginzgame/ic-crates).
-The initial source is pushed; subsequent implementation remains in the working
-tree for user review. Versions remain 0.1.0. No project release, tag, new commit,
-package publication, deployment, provider effect or sibling edit was performed.
-The user explicitly retains all release authority.
+The user completed the 0.1.1 Git release (`8c52898`, tag `v0.1.1`) and reported
+protocol package publication. The current packaging changes remain in the working
+tree for review; manifest versions stay at 0.1.1. This batch performs no release,
+commit, tag, push, package publication, deployment, provider effect or sibling edit.
+The user retains all release authority. The pending notes select 0.2.0 because
+the native executable/package rename changes build and launch commands.
 
 ## Implemented
 
@@ -21,13 +23,17 @@ The user explicitly retains all release authority.
 - Bounded framing, gzip/tar/path checks and matching archive manifest; publish-to-index metadata translation.
 - Upstream Caffeine manifest hashing; IC Host FS durable files and exclusive descriptor locks.
 - Original archives, permissions, scope and signed requests retained before dispatch; retries never redispatch the worker.
-- Standalone protocol packaging, pinned dependency/tool policy, host/MSRV CI and user-operated release/publication adapters.
+- Coordinated protocol/CLI packaging, pinned dependency/tool policy, host/MSRV CI and user-operated release/publication adapters.
+- Publishable `ic-crates` CLI/library with package-local README/license; canisters remain private.
+- Dependency-ordered package publication with independent version/checksum observations and retained upload results.
 
 See [bridge setup, worker contract and recovery](../cargo-publish.md),
 [development](../development.md) and [user-operated release commands](../publishing.md).
 The bridge requires a reviewed provider driver for the operator's browser/signers
 and installation; it does not ship a fake provider in the production binary.
-Only the protocol library is a crates.io candidate; application packages are private.
+`ic-crates-protocol` and `ic-crates` are crates.io candidates. The native binary
+is now `ic-crates`, and its library entry point is `ic_crates::run`; the former
+development package/binary `ic-crates-publisher` is replaced. Canisters remain private.
 
 ## Selected released graph
 
@@ -56,7 +62,7 @@ committed reply, conflicting metadata and incomplete retained intent. Archive
 checks reject truncation, trailing bytes, wrong manifest identity, traversal,
 symlinks, corrupt CRC and exceeded bounds. Strict targeted Clippy passes.
 
-`make ci` passes all 15 delivery targets: snapshot/tool integrity, metadata,
+The prior foundation passed all 15 delivery targets: snapshot/tool integrity, metadata,
 runtime identities, pins, documentation links, formatting, native checks/tests,
 strict Clippy, rustdoc, both Rust minimums, protocol archive verification and
 isolated release-command/recovery fixtures. Ten unit/wire tests and one doctest
@@ -64,10 +70,20 @@ pass. Loopback networking is required by the real Cargo fixture; a restricted
 sandbox run refused socket creation, and the complete run passed with local
 networking enabled. Failure logs remain under `target/validation-failures`;
 the standard logger now retains complete runs under `target/validation-runs`.
-The protocol package verifies independently (11 files, about 13 KiB compressed).
-Linux ShellCheck, actionlint, Git-history Gitleaks and `git diff --check` pass.
-The reviewed
-CI matrix configures Ubuntu 24.04 and macOS 15 on Intel and Apple Silicon;
+The new public packages verify together with normal `cargo package --locked`:
+the CLI builds against the exact protocol archive in Cargo's temporary staging
+registry. Both include their own README and MIT license. Explicit offline batch
+verification refused the temporary-registry unpack step; normal Cargo handling
+passed without version edits or `--no-verify`. Publication adapter fixtures cover
+dependency order, completed-package replay, unknown/mismatched/yanked observations,
+lost replies, failed uploads and source mutation, with no real registry traffic.
+The final `make ci` passes all 16 targets, including both package archives,
+the 1.88 protocol/1.91 application minimums, strict Clippy, rustdoc and
+release/publication fixtures. Complete logs and timings are retained at
+`target/validation-runs/validation.Y1ZsiX`. Linux ShellCheck, actionlint,
+Git-history Gitleaks and `git diff --check` also pass. Manifest versions and
+the real checkout's index/commit/tag remain unchanged by this batch.
+The reviewed CI matrix configures Ubuntu 24.04 and macOS 15 on Intel and Apple Silicon;
 local Linux evidence does not establish macOS qualification. Standard validation
 performs no production release or publication. Release adapter tests use isolated
 throwaway source/bare-remote Git fixtures, never the real checkout's index or refs.

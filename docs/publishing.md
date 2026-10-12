@@ -1,22 +1,28 @@
 # Release and package publication
 
-The publication candidate is `ic-crates-protocol`. Its archive contains only
-source, a package README, MIT license and Cargo-generated manifests/lockfile.
-The application canisters remain `publish = false`; deploying the registry is
-independent of publishing this protocol library to crates.io. The native publisher
-package is also private: its [Cargo upload API](cargo-publish.md) publishes client
-archives to an installed IC registry, a separate flow from this project's release.
+The public packages are `ic-crates-protocol` and `ic-crates`. The protocol library
+owns Cargo/Candid contracts; `ic-crates` provides the native bridge executable
+and `ic_crates::run` library entry point. Both archives contain their own source,
+README, MIT license and Cargo-generated manifests/lockfile. Canister packages
+remain `publish = false`. The bridge's [Cargo upload API](cargo-publish.md)
+publishes client archives to an installed IC registry, a separate flow from
+publishing these tools to crates.io.
 
-The workspace's initial 0.1.0 is an unpublished development baseline. The first
-governed patch candidate is 0.1.1, with one pending numbered changelog entry.
+The workspace's initial 0.1.0 is an unpublished development baseline. The user
+completed the 0.1.1 Git release. The current draft is 0.2.0 because renaming the
+native executable from `ic-crates-publisher` to `ic-crates` changes launch commands;
+there is one current CLI name. Manifests remain at 0.1.1 until the user releases.
 Preparing the repository does not change package versions, create tags, commit,
 push or upload packages.
 
 ## Preparation
 
 Follow [development setup](development.md), then complete `make ci` and Linux
-`make lint check-secrets`. `make publish-dry-run` packages and verifies the protocol
-archive without registry mutation; it accepts dirty source for review. The actual
+`make lint check-secrets`. `make publish-dry-run` packages and verifies both public
+archives without registry mutation; it accepts dirty source for review. Cargo's
+batch packager builds the CLI against the exact protocol archive staged in that
+invocation, rather than a previously published same-version copy. Normal registry
+handling is required; `--locked` preserves external dependency selection. The actual
 publication command requires an exact clean, tagged source.
 
 ## User-operated release
@@ -28,6 +34,9 @@ make release-patch
 make release-minor
 make release-major
 ```
+
+The executable rename requires `release-minor` for the current 0.2.0 notes;
+later work chooses the component appropriate to its pending draft.
 
 All three use the same reviewed Shared Tooling runner and local metadata adapter:
 preflight and locked/tool preparation, complete native validation, metadata and
@@ -49,10 +58,17 @@ The [shared release contract](releases.md) owns Git effects and interruption rec
 make publish
 ```
 
-This verifies the clean source, exact current release tag and receipt, then uses
-the shared registry observer. A confirmed existing version is an effect-free
-success; a confirmed missing version reaches `cargo publish --locked` for the
-protocol package. An unknown registry observation stops the command. Cargo owns
+This verifies the clean source, exact current release tag and receipt, then
+packages both archives together and uses the shared registry observer for each.
+Any unknown, conflicting or yanked version stops the entire batch before upload.
+For confirmed missing versions it publishes `ic-crates-protocol` first, then
+`ic-crates`, using normal `cargo publish --locked --registry crates-io -p NAME`.
+Each package is observed again immediately before upload and after its result.
+The CLI is attempted only after the exact protocol checksum is confirmed.
+Already-published packages with matching checksums are skipped independently;
+resuming a partially completed batch never needs to re-upload its completed
+dependency. An uncertain post-upload observation stops further publication and
+retains the attempt under `target/publication-observations`. Cargo owns
 authentication through its configured credential provider; tokens are never
 embedded in the repository or command arguments.
 
@@ -60,3 +76,6 @@ Publication is separate from release completion. After an interrupted upload,
 re-run the observer before sending again. A transport error is not evidence of
 an absent version. A tag alone does not prove crates.io publication, native macOS
 qualification, application deployment or real provider acceptance.
+
+After the user publishes `ic-crates`, users can install the executable with
+`cargo install --locked ic-crates` and run `ic-crates /absolute/path/bridge.json`.
