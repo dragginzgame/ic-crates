@@ -1,8 +1,10 @@
 .DEFAULT_GOAL := help
 SHARED_TOOLING_ROOT := $(CURDIR)
+LOCAL_TOOL_INSTALL_TARGETS := install-app-tools
+LOCAL_TOOL_CHECK_TARGETS := app-tools-check
 include make/consumer.mk
 
-PACKAGES = -p ic-crates-protocol -p canister_ic_crates_registry -p canister_ic_crates_blob -p ic-crates
+PACKAGES = -p ic-crates-protocol -p canister_ic_crates_registry -p canister_ic_crates_blob -p ic-crates -p ic-crates-tests
 export CARGO_TARGET_DIR := $(CURDIR)/target
 export VALIDATION_LOG_DIR ?= $(CURDIR)/target/validation-runs
 SHELLCHECK ?= $(CURDIR)/.tools/ci/bin/shellcheck
@@ -15,12 +17,14 @@ GITLEAKS ?= $(CURDIR)/.tools/ci/bin/gitleaks
         release-version release-preflight release-verify release-prepare-version \
         release-prepared-check release-files release-commit-check release-committed-check \
         release-tagged-check release-push-check install-validation-tools lint check-secrets
+.PHONY: install-app-tools app-tools-check managed-build test-ic
 
 help:
 	@echo 'deps / install-tools / tools-check: prepare dependencies and the common toolset'
 	@echo 'fmt / fmt-check / install-hooks: shared formatting and pre-commit activation'
 	@echo 'check / test / clippy / docs-check: focused Rust development checks'
-	@echo 'ci: complete native delivery gate with retained validation logs'
+	@echo 'managed-build / test-ic: Canic artifacts and actual registry/blob PocketIC qualification'
+	@echo 'ci: complete native and managed IC gate with retained validation logs'
 	@echo 'package-check / publish-dry-run: verify protocol and CLI archives before publication'
 	@echo 'release-patch / release-minor / release-major: user-operated shared release workflow'
 	@echo 'publish: user-operated crates.io publication of the exact tagged protocol, then CLI'
@@ -48,7 +52,7 @@ check:
 	+cargo check --offline --locked $(PACKAGES) --all-targets
 
 test:
-	+cargo test --offline --locked -p ic-crates-protocol -p canister_ic_crates_registry -p ic-crates
+	+cargo test --offline --locked -p ic-crates-protocol -p canister_ic_crates_registry -p ic-crates -p ic-crates-tests
 
 test-protocol:
 	+cargo test --offline --locked -p ic-crates-protocol
@@ -69,6 +73,7 @@ check-doc-links:
 	perl scripts/ci/check-documentation-links.pl --root "$(CURDIR)" \
 		README.md AGENTS.md CHANGELOG.md docs/status/current.md docs/development.md \
 		docs/publishing.md docs/cargo-publish.md crates/ic-crates-protocol/README.md \
+		crates/ic-crates-protocol/UPSTREAM.md \
 		apps/ic_crates/publisher/README.md DRAGGINZGAME.md \
 		rules/*.md tasks/*.md audits/*.md docs/principles/*.md docs/supported-hosts.md \
 		docs/local-setup.md docs/ic-tools.md docs/make-interface.md docs/releases.md \
@@ -85,7 +90,19 @@ ci:
 	+@bash scripts/ci/run-validation-targets.sh --fail-fast \
 		shared-tooling-check tools-check metadata-check runtime-check check-pins \
 		check-doc-links fmt-check check test clippy docs-check msrv-check \
-		package-check check-release-commands test-release test-publish
+		package-check check-release-commands test-release test-publish managed-build test-ic
+
+install-app-tools:
+	+bash scripts/ci/managed-ic.sh install
+
+app-tools-check:
+	+bash scripts/ci/managed-ic.sh check
+
+managed-build:
+	+bash scripts/ci/managed-ic.sh build
+
+test-ic:
+	+bash scripts/ci/managed-ic.sh test
 
 check-release-commands:
 	@bash scripts/ci/check-release-commands.sh "$(CURDIR)" \
@@ -116,7 +133,7 @@ install-validation-tools:
 			--sha256 "$$SHARED_TOOLING_GITLEAKS_SHA256_LINUX_X64" --install-dir "$(CURDIR)/.tools/ci/bin"'
 
 lint:
-	"$(SHELLCHECK)" scripts/release/*.sh scripts/ci/check-runtime-identities.sh .githooks/pre-commit
+	"$(SHELLCHECK)" scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh .githooks/pre-commit
 	"$(ACTIONLINT)" .github/workflows/ci.yml
 
 check-secrets:

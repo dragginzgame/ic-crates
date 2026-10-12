@@ -92,10 +92,8 @@ impl IndexEntry {
             return Err(RegistryError::Limit);
         }
         for dep in &entry.deps {
-            canonical_name(&dep.name)?;
-            if let Some(package) = &dep.package {
-                canonical_name(package)?;
-            }
+            validate_dependency_name(&dep.name)?;
+            canonical_name(dep.package.as_deref().unwrap_or(&dep.name))?;
             semver::VersionReq::parse(&dep.req).map_err(|_| RegistryError::InvalidMetadata)?;
             if !matches!(dep.kind.as_deref(), None | Some("normal" | "dev" | "build")) {
                 return Err(RegistryError::InvalidMetadata);
@@ -123,6 +121,22 @@ impl IndexEntry {
         }
         Ok(line)
     }
+}
+
+// Adapted from crates/crates_io_validation/src/lib.rs at upstream commit
+// 8ac99b2b31af2efd2ab53035c8636f3c1895654c. Copyright (c) 2014 The Rust
+// Project Developers. MIT; see LICENSE-CRATES-IO and UPSTREAM.md.
+fn validate_dependency_name(name: &str) -> Result<(), RegistryError> {
+    if name.is_empty()
+        || name.len() > 64
+        || !(name.as_bytes()[0].is_ascii_alphabetic() || name.as_bytes()[0] == b'_')
+        || !name
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+    {
+        return Err(RegistryError::InvalidName);
+    }
+    Ok(())
 }
 
 /// Namespace key. Case and hyphen/underscore variants cannot claim separate crates.

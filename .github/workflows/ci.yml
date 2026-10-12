@@ -39,11 +39,13 @@ jobs:
         run: |
           rustup toolchain install 1.88.0 --profile minimal --no-self-update
           rustup toolchain install 1.91.0 --profile minimal --no-self-update
+      - name: Prepare managed Wasm compiler target
+        run: rustup target add wasm32-unknown-unknown
       - name: Prepare complete common toolset
         run: make install-tools 2>&1 | tee "$TMPDIR/tools-install.log"
       - name: Prepare locked dependency cache
         run: make deps
-      - name: Run complete native delivery gate
+      - name: Run complete delivery gate
         run: make ci
       - name: Retain failed tool setup evidence
         if: ${{ failure() && !cancelled() }}
@@ -61,6 +63,24 @@ jobs:
           path: |
             target/validation-runs/
             target/validation-failures/
+            target/managed-builds/
+            target/managed-tests/
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Archive failed managed Wasm evidence
+        if: ${{ failure() && !cancelled() }}
+        run: |
+          if [[ -d apps/ic_crates/.canic/release-builds ]]; then
+            mkdir -p target
+            bash scripts/ci/archive-evidence.sh "$GITHUB_WORKSPACE/target/managed-wasm-evidence.tar.gz" \
+              "$GITHUB_WORKSPACE" apps/ic_crates/.canic/release-builds
+          fi
+      - name: Retain failed managed Wasm artifacts
+        if: ${{ failure() && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: managed-wasm-${{ matrix.os }}-${{ github.run_attempt }}
+          path: target/managed-wasm-evidence.tar.gz
           retention-days: 14
           if-no-files-found: ignore
 

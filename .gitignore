@@ -1,4 +1,5 @@
 /target/
+/.canic/
 /.tools/
 /.local/
 /.cargo/local-overrides.toml

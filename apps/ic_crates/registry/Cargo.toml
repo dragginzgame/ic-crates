@@ -17,7 +17,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 candid.workspace = true
-canic.workspace = true
+canic = { workspace = true, features = [] }
 ic-blob-storage.workspace = true
 ic-blob-storage-contracts.workspace = true
 ic-cdk.workspace = true
@@ -28,5 +28,5 @@ serde.workspace = true
 serde_json.workspace = true
 
 [build-dependencies]
-canic.workspace = true
+canic = { workspace = true, features = [] }
 icydb.workspace = true

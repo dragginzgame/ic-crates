@@ -93,7 +93,7 @@ bash scripts/ci/check-release-tag.sh "$commit" "$candidate"
 [[ "$(git --git-dir="$fixture/remote.git" rev-parse "refs/tags/v$candidate^{commit}")" == "$commit" ]]
 perl scripts/release/metadata.pl check-commit "$commit" "$source" "$candidate" "$date"
 perl scripts/ci/rewrite-local-lock-versions.pl Cargo.lock "$candidate" "$previous" \
-    ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates > "$fixture/restored.lock"
+    ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates ic-crates-tests > "$fixture/restored.lock"
 cmp "$fixture/original.lock" "$fixture/restored.lock"
 make --no-print-directory release-resume VERSION="$candidate" > "$fixture/resume.log" 2>&1
 [[ "$(git rev-parse HEAD)" == "$commit" ]]

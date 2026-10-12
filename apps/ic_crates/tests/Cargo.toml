@@ -1,0 +1,20 @@
+[package]
+name = "ic-crates-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dev-dependencies]
+candid.workspace = true
+canic = { workspace = true, features = ["testing"] }
+canic-host.workspace = true
+ic-blob-storage-contracts.workspace = true
+ic-crates-protocol.workspace = true
+ic-host-fs.workspace = true
+ic-testkit.workspace = true
+icydb.workspace = true
+serde.workspace = true
+serde_json.workspace = true

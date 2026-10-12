@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1]
+
+- Port crates.io dependency alias and transitive feature-splitting behavior, allowing underscore-prefixed aliases and keeping extended feature chains together in the Cargo index.
+- Qualify renamed optional dependencies and default/weak feature activation by publishing and consuming two crates with unmodified Cargo.
+- Fix managed Canic builds by declaring the explicit feature lists required for role-contract admission.
+- Add managed registry/blob IC tests for controller rejection, real tenant upload admission, unattested-publication refusal and same-release restoration.
+- Extend the delivery gate with matching Canic artifacts and Testkit-owned PocketIC setup, bounded startup polling and retained build/server evidence.
+
 ## [0.2.0] - 2026-10-12
 
 - Make the native bridge installable as the `ic-crates` crates.io package alongside `ic-crates-protocol`, with package-local documentation and licensing.

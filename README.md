@@ -9,7 +9,21 @@ The foundation includes a controller-operated catalog, Cargo sparse-index and
 blob download routes, and a token-authenticated native `cargo publish` bridge.
 An unmodified Cargo client can publish, resolve, download and build through the
 bridge in local fixture tests. Deployed IC/provider acceptance remains unqualified.
+Managed PocketIC tests also qualify actual registry/blob Wasm installation,
+tenant admission, controller rejection and same-release restoration.
 See [current evidence](docs/status/current.md).
+
+## Upstream code reference
+
+**[rust-lang/crates.io](https://github.com/rust-lang/crates.io)** is our primary
+source reference for this port. Reuse and adapt its registry behavior, validation,
+frontend components and tests where practical. Adapt persistence, lifecycle and
+archive storage to IcyDB, Canic and IC Blob Storage.
+
+Upstream is licensed under MIT or Apache-2.0. When porting code, record the source
+commit and preserve the applicable copyright and license notices.
+The first [documented code adaptations](crates/ic-crates-protocol/UPSTREAM.md)
+cover dependency alias validation and transitive Cargo feature splitting.
 
 ## Components
 
@@ -19,6 +33,7 @@ See [current evidence](docs/status/current.md).
 | `apps/ic_crates/registry` | IcyDB configuration/upload/version records, publication and HTTP reads |
 | `apps/ic_crates/blob` | Dedicated Canic Blob Service shell using upstream endpoints and lifecycle |
 | `apps/ic_crates/publisher` | Native Cargo HTTP bridge, archive validation, retained jobs and IC transport |
+| `apps/ic_crates/tests` | Managed Wasm installation and registry/blob IC qualification |
 | `apps/ic_crates/canic.toml` | Registry and target-initialized blob components |
 
 Canic owns lifecycle and the memory allocation pool; IcyDB participates
@@ -34,6 +49,8 @@ Timers 0.19 needs coordinated Canic adoption before selection here.
 2. A controller calls `registry_configure` once with the blob service, namespace,
    verifier, provider project and HTTPS provider origin. Exact replay succeeds;
    changing the immutable configuration is refused.
+   IcyDB's asynchronous startup must finish first; a pending database diagnostic
+   indicates that writes remain closed.
 3. Run the [Cargo bridge](docs/cargo-publish.md) with explicit IC transport,
    controller identity, token, private spool and Blob Storage worker selections.
    Cargo sends its metadata and archive to `PUT /api/v1/crates/new`.
@@ -106,11 +123,13 @@ make lint check-secrets       # Linux
 [Development setup](docs/development.md) documents supported hosts, minimum Rust
 versions, local overrides and the reviewed Shared Tooling snapshot. Native Cargo
 fixture tests do not qualify installed canisters or deployed provider behavior.
-Managed Wasm builds use the matching **0.111** Canic CLI:
+`make install-tools` prepares the matching locked Canic CLI and Testkit-owned
+PocketIC setup. Install the Wasm target with `rustup target add wasm32-unknown-unknown`.
+The full `make ci` includes the managed IC checks; they can also run independently:
 
 ```sh
-canic build ic_crates --workspace . --config apps/ic_crates/canic.toml \
-  --icp-root apps/ic_crates --profile fast --json
+make managed-build
+make test-ic
 ```
 
 `ic-crates` (the native CLI/library) and `ic-crates-protocol` are crates.io

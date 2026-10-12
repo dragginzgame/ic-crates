@@ -8,7 +8,7 @@ repository.workspace = true
 description = "Cargo sparse-index formats and publication contracts for IC Crates"
 readme = "README.md"
 publish = true
-include = ["src/**", "README.md", "LICENSE"]
+include = ["src/**", "README.md", "LICENSE", "LICENSE-CRATES-IO", "UPSTREAM.md"]
 
 [dependencies]
 candid.workspace = true

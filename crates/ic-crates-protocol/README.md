@@ -22,6 +22,12 @@ assert_eq!(canonical_name("Example_Crate")?, "example-crate");
 means the current registry; crates.io dependencies need their explicit index URL.
 This is distinct from Cargo publish-API metadata.
 
+Dependency aliases may start with `_`; crate and package names must start with an
+ASCII letter. Extended features and every transitive alias referring to them
+are placed in `features2`, including aliases used by `default`. This behavior is
+adapted from crates.io; [source revisions and notices](UPSTREAM.md) are included
+in the package.
+
 Cargo's checksum is lowercase hexadecimal SHA-256 of raw `.crate` bytes, not the
 provider tree root. Configuration names an HTTPS provider origin, blob service,
 namespace, project and completion verifier. Parsing validates representation;

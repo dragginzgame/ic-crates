@@ -1,5 +1,7 @@
 //! Cargo's upload metadata is a distinct external contract from index entries.
 
+mod features;
+
 use crate::{Dependency, IndexEntry, RegistryError};
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -32,12 +34,7 @@ pub struct CargoDependency {
 impl CargoMetadata {
     /// Translate renamed dependencies and extended features; compute checksum at the host.
     pub fn into_index(self, checksum: String) -> Result<IndexEntry, RegistryError> {
-        let (features2, features): (BTreeMap<_, _>, BTreeMap<_, _>) =
-            self.features.into_iter().partition(|(_, values)| {
-                values
-                    .iter()
-                    .any(|value| value.starts_with("dep:") || value.contains("?/"))
-            });
+        let (features, features2) = features::split_features(self.features);
         let entry = IndexEntry {
             name: self.name,
             vers: self.vers,
@@ -74,6 +71,71 @@ impl CargoMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn feature_aliases_follow_transitive_extended_dependencies() {
+        let metadata: CargoMetadata = serde_json::from_value(serde_json::json!({
+            "name":"demo", "vers":"0.1.0", "deps":[],
+            "features":{
+                "default":["bundle"], "bundle":["codec"], "codec":["dep:serde"],
+                "weak":["serde?/derive"], "alias":["weak"],
+                "cycle-a":["cycle-b"], "cycle-b":["cycle-a", "codec"],
+                "plain":[], "legacy":["plain"]
+            }
+        }))
+        .unwrap();
+        let entry = metadata.into_index("ab".repeat(32)).unwrap();
+        assert_eq!(
+            entry
+                .features
+                .keys()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            ["legacy", "plain"]
+        );
+        let extended = entry.features2.unwrap();
+        for name in [
+            "default", "bundle", "codec", "weak", "alias", "cycle-a", "cycle-b",
+        ] {
+            assert!(extended.contains_key(name), "missing extended alias {name}");
+        }
+        assert_eq!(extended["default"], ["bundle"]);
+        assert_eq!(entry.v, Some(2));
+    }
+
+    #[test]
+    fn dependency_aliases_can_start_with_underscore_without_loosening_crate_names() {
+        let metadata: CargoMetadata = serde_json::from_value(serde_json::json!({
+            "name":"demo", "vers":"0.1.0", "deps":[{
+                "name":"serde", "explicit_name_in_toml":"_codec", "version_req":"^1",
+                "features":[], "optional":true, "default_features":false
+            }], "features":{"codec":["dep:_codec"]}
+        }))
+        .unwrap();
+        let entry = metadata.into_index("ab".repeat(32)).unwrap();
+        assert_eq!(entry.deps[0].name, "_codec");
+        assert_eq!(entry.deps[0].package.as_deref(), Some("serde"));
+        for package in [None, Some("_serde".to_owned())] {
+            let mut invalid_entry = entry.clone();
+            invalid_entry.deps[0].package = package;
+            assert_eq!(
+                IndexEntry::parse(invalid_entry.line().unwrap().trim()),
+                Err(RegistryError::InvalidName)
+            );
+        }
+        assert_eq!(
+            crate::canonical_name("_demo"),
+            Err(RegistryError::InvalidName)
+        );
+        for invalid in ["", "1codec", "-codec", "_京", "_bad/name", &"a".repeat(65)] {
+            let mut invalid_entry = entry.clone();
+            invalid_entry.deps[0].name = invalid.into();
+            assert_eq!(
+                IndexEntry::parse(invalid_entry.line().unwrap().trim()),
+                Err(RegistryError::InvalidName)
+            );
+        }
+    }
 
     #[test]
     fn publish_translation_preserves_registry_target_kind_and_feature_syntax() {

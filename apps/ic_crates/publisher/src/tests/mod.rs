@@ -8,6 +8,7 @@ use flate2::{Compression, write::GzEncoder};
 use ic_blob_storage_contracts::dto::upload::admission::UploadAdmissionRequest;
 use ic_crates_protocol::{HttpResponse, IndexEntry, PublishRequest, index_path};
 use std::{
+    collections::BTreeMap,
     fs,
     io::{Cursor, Read, Write},
     path::{Path, PathBuf},
@@ -24,7 +25,7 @@ struct Catalog {
     admissions: AtomicUsize,
     commits: AtomicUsize,
     lose_reply: AtomicBool,
-    package: Mutex<Option<(IndexEntry, Vec<u8>)>>,
+    packages: Mutex<BTreeMap<String, (IndexEntry, Vec<u8>)>>,
 }
 
 impl Registry for Arc<Catalog> {
@@ -39,12 +40,12 @@ impl Registry for Arc<Catalog> {
         }
         let entry = IndexEntry::parse(request.index_json.trim()).unwrap();
         let archive = fs::read(job.join("archive.crate")).unwrap();
-        let mut package = self.package.lock().unwrap();
-        if let Some((previous, previous_archive)) = package.as_ref() {
+        let mut packages = self.packages.lock().unwrap();
+        if let Some((previous, previous_archive)) = packages.get(&entry.name) {
             assert_eq!(previous, &entry);
             assert_eq!(previous_archive, &archive);
         } else {
-            *package = Some((entry, archive));
+            packages.insert(entry.name.clone(), (entry, archive));
             self.commits.fetch_add(1, Ordering::SeqCst);
         }
         if self.lose_reply.swap(false, Ordering::SeqCst) {
@@ -56,8 +57,8 @@ impl Registry for Arc<Catalog> {
         if path == "/index/config.json" {
             return Ok(server::json(200, serde_json::json!({"dl":"fixture"})));
         }
-        let package = self.package.lock().unwrap();
-        if let Some((entry, archive)) = package.as_ref() {
+        let packages = self.packages.lock().unwrap();
+        for (entry, archive) in packages.values() {
             if path == format!("/index/{}", index_path(&entry.name).unwrap()) {
                 return Ok(HttpResponse {
                     status_code: 200,
@@ -299,10 +300,30 @@ fn unmodified_cargo_publishes_then_resolves_downloads_and_builds_from_the_bridge
     fs::write(home.join("config.toml"), format!("[registry]\nglobal-credential-providers=[\"cargo:token\"]\n[registries.fixture]\nindex=\"sparse+http://{address}/index/\"\n")).unwrap();
     let package = root.path().join("package");
     fs::create_dir_all(package.join("src")).unwrap();
-    fs::write(package.join("Cargo.toml"), "[package]\nname=\"wire_demo\"\nversion=\"0.1.0\"\nedition=\"2024\"\nlicense=\"MIT\"\ndescription=\"local wire fixture\"\n").unwrap();
+    fs::write(package.join("Cargo.toml"), r#"[package]
+name="wire_demo"
+version="0.1.0"
+edition="2024"
+license="MIT"
+description="local wire fixture"
+[dependencies]
+_wire_leaf={package="wire_leaf",version="0.1.0",registry="fixture",optional=true,default-features=false}
+[features]
+default=["bundle"]
+bundle=["codec"]
+codec=["dep:_wire_leaf", "_wire_leaf?/v1"]
+"#).unwrap();
     fs::write(
         package.join("src/lib.rs"),
-        "pub fn answer() -> u32 { 42 }\n",
+        "pub fn answer() -> u32 { _wire_leaf::answer() }\n",
+    )
+    .unwrap();
+    let leaf = root.path().join("leaf");
+    fs::create_dir_all(leaf.join("src")).unwrap();
+    fs::write(leaf.join("Cargo.toml"), "[package]\nname=\"wire_leaf\"\nversion=\"0.1.0\"\nedition=\"2024\"\nlicense=\"MIT\"\ndescription=\"local dependency fixture\"\n[features]\nv1=[]\n").unwrap();
+    fs::write(
+        leaf.join("src/lib.rs"),
+        "#[cfg(feature=\"v1\")]\npub fn answer() -> u32 { 42 }\n",
     )
     .unwrap();
     let target = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -328,9 +349,25 @@ fn unmodified_cargo_publishes_then_resolves_downloads_and_builds_from_the_bridge
     };
     // Real Cargo upload framing and follow-up sparse polling.
     cargo(
+        &leaf,
+        &["publish", "--registry", "fixture", "--allow-dirty"],
+    );
+    cargo(
         &package,
         &["publish", "--registry", "fixture", "--allow-dirty"],
     );
+    {
+        let packages = observed.packages.lock().unwrap();
+        let entry = &packages["wire_demo"].0;
+        assert_eq!(entry.deps[0].name, "_wire_leaf");
+        assert_eq!(entry.deps[0].package.as_deref(), Some("wire_leaf"));
+        assert_eq!(entry.deps[0].registry, None);
+        assert!(entry.features.is_empty());
+        let extended = entry.features2.as_ref().unwrap();
+        for name in ["default", "bundle", "codec"] {
+            assert!(extended.contains_key(name));
+        }
+    }
     let consumer = root.path().join("consumer");
     fs::create_dir_all(consumer.join("src")).unwrap();
     fs::write(consumer.join("Cargo.toml"), "[package]\nname=\"wire_consumer\"\nversion=\"0.1.0\"\nedition=\"2024\"\n[dependencies]\nwire_demo={version=\"0.1.0\",registry=\"fixture\"}\n").unwrap();
@@ -351,6 +388,6 @@ fn unmodified_cargo_publishes_then_resolves_downloads_and_builds_from_the_bridge
     assert!(response.starts_with("HTTP/1.1 403"));
     stop.store(true, Ordering::SeqCst);
     worker.join().unwrap();
-    assert_eq!(observed.admissions.load(Ordering::SeqCst), 1);
-    assert_eq!(observed.commits.load(Ordering::SeqCst), 1);
+    assert_eq!(observed.admissions.load(Ordering::SeqCst), 2);
+    assert_eq!(observed.commits.load(Ordering::SeqCst), 2);
 }
