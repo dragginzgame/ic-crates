@@ -1,0 +1,11 @@
+{
+   "date" : "2026-10-12",
+   "files" : {
+      "CHANGELOG.md" : "a89bdab133125c3aa10f7661ef6b90e8446d6c2bcb1426514ec9f8464a72a37c",
+      "Cargo.lock" : "b50f60e9293b683a9e1c1871768bb23e28101a1c2b6e2a8e03652bd430d15fe8",
+      "Cargo.toml" : "be2a12ca3651035b0a566e92938e99960cde9581b31cfdd9014e3423725ef99a"
+   },
+   "format" : 1,
+   "source" : "a623d38ca90af304020e1f650dd88ae6abfa8316",
+   "version" : "0.1.1"
+}

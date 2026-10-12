@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.1]
+## [0.1.1] - 2026-10-12
 
 - Build from a fresh checkout with compatible released dependencies and explicit runtime identity checks.
 - Package the protocol library independently with a README, license and verified minimum Rust version.

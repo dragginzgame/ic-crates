@@ -417,7 +417,7 @@ dependencies = [
 
 [[package]]
 name = "canister_ic_crates_blob"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "candid",
  "canic",
@@ -428,7 +428,7 @@ dependencies = [
 
 [[package]]
 name = "canister_ic_crates_registry"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "candid",
  "canic",
@@ -1513,7 +1513,7 @@ dependencies = [
 
 [[package]]
 name = "ic-crates-protocol"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "candid",
  "ic-blob-storage-contracts",
@@ -1525,7 +1525,7 @@ dependencies = [
 
 [[package]]
 name = "ic-crates-publisher"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "candid",
  "flate2",
