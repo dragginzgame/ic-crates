@@ -8,7 +8,7 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.91.0"
 license = "MIT"
@@ -24,7 +24,7 @@ ic-agent = { version = "0.49.2", default-features = false, features = ["pem", "r
 ic-blob-storage = "0.22.13"
 ic-blob-storage-contracts = "0.22.13"
 ic-cdk = "0.20.3"
-ic-crates-protocol = { version = "0.1.1", path = "crates/ic-crates-protocol" }
+ic-crates-protocol = { version = "0.2.0", path = "crates/ic-crates-protocol" }
 ic-host-fs = "0.15"
 ic-memory = "0.35.17"
 # Canic 0.111 and IcyDB 0.270 share the released Timers 0.17 runtime.

@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0]
+## [0.2.0] - 2026-10-12
 
 - Make the native bridge installable as the `ic-crates` crates.io package alongside `ic-crates-protocol`, with package-local documentation and licensing.
 - **Breaking:** rename the native package and executable from `ic-crates-publisher` to `ic-crates`; update build, install and launch commands. Registry and upload wire contracts are unchanged.
