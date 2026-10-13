@@ -9,8 +9,10 @@ The foundation includes a controller-operated catalog, Cargo sparse-index and
 blob download routes, and a token-authenticated native `cargo publish` bridge.
 An unmodified Cargo client can publish, resolve, download and build through the
 bridge in local fixture tests. Deployed IC/provider acceptance remains unqualified.
-Managed PocketIC tests also qualify actual registry/blob Wasm installation,
-tenant admission, controller rejection and same-release restoration.
+Earlier compatible-graph PocketIC evidence covers registry/blob installation,
+tenant admission, controller rejection and restoration. The currently selected
+IcyDB 0.272 graph awaits compatible Canic runtime adoption. The native
+[Blob worker](docs/blob-worker.md) now has real SDK/Chromium local refusal evidence.
 See [current evidence](docs/status/current.md).
 
 ## Upstream code reference
@@ -38,8 +40,9 @@ cover dependency alias validation and transitive Cargo feature splitting.
 
 Canic owns lifecycle and the memory allocation pool; IcyDB participates
 synchronously after restoration. Each canister graph has one Memory and Timers
-identity. Released Canic 0.111 and IcyDB 0.270.3 share Timers 0.17. IcyDB 0.271's
-Timers 0.19 needs coordinated Canic adoption before selection here.
+identity. The selected IcyDB 0.272 requires Timers 0.21 while Canic 0.111 still uses
+Timers 0.17. This deliberate pending selection fails `make runtime-check`;
+IC qualification awaits compatible Canic adoption.
 
 ## Publication
 
@@ -134,7 +137,7 @@ make test-ic
 
 `ic-crates` (the native CLI/library) and `ic-crates-protocol` are crates.io
 candidates; canister packages remain private. After publication, install the
-bridge with `cargo install --locked ic-crates`, then run
+bridge and selected worker with `cargo install --locked ic-crates`, then run
 `ic-crates /absolute/path/bridge.json`. The former command `ic-crates-publisher`
 has been renamed. `make package-check` verifies both archives together without
 uploading them. Versions, release commits, tags, pushes,

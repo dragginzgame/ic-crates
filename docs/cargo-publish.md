@@ -38,8 +38,8 @@ Supply one JSON configuration file, replacing every example path and principal:
   "uploader": "UPLOADER_PRINCIPAL",
   "spool": "/private/ic-crates-spool",
   "worker": "/private/reviewed-blob-worker",
-  "worker_timeout_seconds": 300,
-  "permission_seconds": 600,
+  "worker_timeout_seconds": 600,
+  "permission_seconds": 900,
   "max_archive_bytes": 10485760,
   "max_retained_jobs": 1000,
   "max_spool_bytes": 1073741824
@@ -71,9 +71,10 @@ use consensus until certified query support exists.
 
 The worker is an explicitly reviewed absolute executable. It receives **one**
 argument: the absolute original job directory. It receives no shell command or
-Cargo-provided argument string. This repo supplies the HTTP bridge and canonical
-provider inputs; the operator supplies the driver for their Blob Storage browser,
-installation and signer setup. There is no pretend provider or default uploader
+Cargo-provided argument string. This repo supplies the HTTP bridge, canonical provider inputs and
+`ic-crates-blob-worker`, a thin composition of the maintained Blob owners.
+The operator supplies explicit tools, browser installation and signers through
+the [worker setup guide](blob-worker.md). There is no pretend provider or default uploader
 in the production binary.
 
 Before admission or worker dispatch, durable owner-only files contain:
@@ -88,7 +89,7 @@ Before admission or worker dispatch, durable owner-only files contain:
 
 The shared Caffeine manifest builder hashes the same 64 KiB frames written to the
 archive. Hashed headers are exact `Content-Length` and
-`Content-Type: application/octet-stream`; no filename/cache hints are inferred.
+`Content-Type: application/gzip`; no filename/cache hints are inferred.
 The upstream SDK's rebuild must reproduce those headers, leaves and root.
 
 The driver must prepare `manifest.candid` as the exact uploader, transfer the
@@ -104,8 +105,8 @@ never regenerate IDs, grant as an impersonated tenant or reset a browser profile
 A zero exit allows a catalog check, not success. The catalog authenticates the
 configured verifier's raw digest and a currently live first reference. It rejects
 missing/fenced/conflicting evidence. A nonzero exit or deadline returns a Cargo
-503 and preserves the worker claim. Mainnet worker wiring and acceptance need
-operator integration; local fixture evidence does not qualify them.
+503 and preserves the worker claim. Real SDK preparation and Chromium/native failure paths have local evidence;
+accepted service/provider/verifier/catalog completion still needs qualification.
 
 ## Validation and recovery
 

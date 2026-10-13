@@ -1,132 +1,144 @@
-# Current handoff — 2026-10-12
+# Current handoff — 2026-10-13
 
-The repository contains a controller-operated IC registry and native Cargo upload
-bridge. The public repository is
-[dragginzgame/ic-crates](https://github.com/dragginzgame/ic-crates).
-The user completed the 0.2.0 Git release (`8b419e5`, tag `v0.2.0`), including the
-public `ic-crates` CLI/library packaging. Package publication is a separate
-observation. Manifest versions remain 0.2.0; compatible preparation is recorded
-under pending 0.2.1. Current changes are uncommitted. The user retains release,
-publication and deployment authority.
+[IC Crates](https://github.com/dragginzgame/ic-crates) contains a controller-operated
+IC registry and native Cargo upload bridge. The user released **0.2.1**, tag
+`v0.2.1`, commit `aea8719`. Package versions remain 0.2.1. The current uncommitted
+worker batch is recorded under pending **0.3.0** because new archive manifests
+change their hashed MIME type. The user owns staging, commits, releases,
+publication, deployment and paid effects.
 
-## Implemented
+## Implemented behavior
 
-- Canic lifecycle/memory ownership with synchronous IcyDB participation.
-- Journaled immutable configuration, exact upload intents and version catalog.
-- Controller-only configuration, admission, inspection, publication and yanking.
-- Dedicated target-initialized Canic Blob Service shell.
-- Bounded authenticated attestation, raw SHA-256 check and live-reference observation before atomic publication.
-- Cargo sparse index, blob redirects and HTTP query-to-update upgrade.
-- Token-authenticated native Cargo bridge with bounded framing, archive validation and metadata translation.
-- Upstream manifest hashing and IC Host FS durable files/descriptor locks.
-- Original archive, permission, scope and signed requests retained before effects; Cargo retries never redispatch the worker.
-- Two independently verified public package archives and dependency-ordered user-operated publication adapters.
-- Matching Canic managed artifacts and Testkit-owned PocketIC tooling in the standard delivery gate.
-- Adapted crates.io rules for underscore-prefixed dependency aliases and transitive extended-feature splitting, with packaged attribution and license notices.
+Canic owns lifecycle and memory bootstrap; IcyDB owns the catalog. Blob owns
+permissions, provider protocol, browser journals, verification, references and
+accounting. Registry endpoints currently require a controller. The native bridge
+validates Cargo framing/archive structure, retains exact original jobs before
+effects and confirms authenticated verifier checksum plus a live reference before
+catalog publication. Cargo retries never dispatch admission or a worker again.
+Yanking retains published references and downloads.
+
+The new `ic-crates-blob-worker` composes maintained Blob preparation, browser
+transfer and independent verifier commands for an **already-admitted canister
+tenant permission**. Explicit tool hashes, signer principals, installation scope
+and budgets are retained before effects. The worker refuses a reused evidence
+folder; pending/refused/uncertain outcomes stop. Selected worker executables
+are bounded at 256 MiB, admitting the supported debug build. A successful worker still requires
+catalog confirmation. There is no second tenant grant, provider encoder, SDK
+hashing implementation, transfer journal or retry owner.
+
+An offline preflight checks original requests/bytes and real SDK/native manifest
+agreement without service/provider calls. New archive manifests use exact
+`Content-Length` and `Content-Type: application/gzip`, matching the SDK's detected
+archive type. Old octet-stream manifests and jobs must retain their original
+worker and journals for explicit reconciliation; do not rewrite admitted claims.
+Serialized job/configuration layouts are unchanged, but the new manifest behavior
+is a pre-1.0 semantic hard cut.
 
 See [bridge setup and recovery](../cargo-publish.md),
-[development and managed qualification](../development.md) and
-[user-operated release commands](../publishing.md).
-The bridge still requires an operator-selected upstream provider worker for the
-installation/browser/signers. Publisher accounts, ownership, search, certified
-queries and caching remain unfinished. Yanking retains published references.
+[explicit Blob tool/signers and local test setup](../blob-worker.md),
+[development](../development.md) and [user-owned publication](../publishing.md).
+Publisher accounts, ownership, search, browsing, certified queries and caching
+remain unfinished. The README pins [rust-lang/crates.io](https://github.com/rust-lang/crates.io)
+as the upstream port reference; existing adaptations and MIT attribution remain
+[packaged with the protocol](../../crates/ic-crates-protocol/UPSTREAM.md).
 
-## Selected released graph
+## Current graph and IC blocker
 
-| Dependency | Selection |
+| Owner | Locked selection |
 | --- | --- |
-| Canic, Host and Blob adapter | 0.111.0 |
-| IcyDB family | 0.270.3 |
-| IC Blob Storage/contracts | 0.22.13 |
-| IC Memory | 0.35.18 |
-| IC Timers | 0.17.14 |
-| IC Agent | 0.49.2, native bridge only |
-| IC Host FS | 0.15.0, direct native dependency |
-| IC Testkit | 0.33.8, private test harness/tooling only |
-| Shared Tooling | 0.9.5, b1630b89482cc6071fc928a86962d79c9c11fdb7 |
+| Canic family | 0.111.0 |
+| IcyDB family | 0.272.0, explicitly retained by the user |
+| IC Blob Storage/contracts | 0.22.15 |
+| IC Memory | 0.35.19 |
+| IC Timers | 0.17.14 through Canic; 0.21.1 through IcyDB |
+| Direct harness IC Testkit | 0.35.1; Canic/testing retains 0.33.8 |
+| Native IC Agent | 0.49.2 |
+| Direct native Host FS/Process | 0.15.2 |
+| Shared Tooling | 0.9.5, `b1630b89482cc6071fc928a86962d79c9c11fdb7` |
 
-Canic 0.111 and IcyDB 0.270 share Timers 0.17; IcyDB 0.271's Timers 0.19
-needs coordinated Canic adoption. Every canister graph retains one Memory/Timers
-identity. Private host tooling has additional upstream Host FS versions; it is
-outside the canister graph. PocketIC's exact dependency requires thiserror 2.0.18;
-other pre-existing external package identities were preserved. Siblings remain
-read-only and their concurrent changes are excluded from qualification.
+The selected graph deliberately awaits compatible Canic adoption. The unchanged
+runtime gate rejects two Timers identities. `make ci` passes snapshot, tools and
+metadata checks, then fails `runtime-check`; current managed builds/PocketIC
+qualification are pending. No downgrade, local sibling override or weakened gate
+was introduced. Host tooling's other FS/Process versions are outside the canister
+runtime. The Testkit installer selects the harness's resolved direct dependency,
+using Shared Tooling's canonical installer and Testkit-owned server setup rather
+than assuming every upstream SDK has the same Testkit version.
 
-## Validation evidence
+Final input SHA-256:
 
-Native checks cover unmodified Cargo publication of two crates, sparse-index
-polling, downloads and consumer compilation against a local substitute. The
-consumer resolves an underscore-prefixed renamed optional dependency and enables
-it through default, transitive, namespaced and weak features. Recovery covers
-failed workers, lost committed replies, conflicting metadata and incomplete
-retained intent. Archive tests reject invalid framing, paths, manifest identity,
-CRC and bounds. Publication adapter fixtures qualify dependency order, independent
-version/checksum/yank observations, interruption and source mutation without
-real publication traffic.
+- Cargo.lock: `4fc1c2171d6a2edf6b309c21a3bef100643c0221314b7c79c71e793a75d5af89`.
+- Cargo.toml: `c6f91e4a628b1e6e138a357e995f2b4d6b76522572e974a33caa87beac5511a4`.
 
-The first crates.io adaptations are pinned to
-`8ac99b2b31af2efd2ab53035c8636f3c1895654c`; the protocol package includes
-[the source attribution](../../crates/ic-crates-protocol/UPSTREAM.md) and upstream
-MIT notice. New alias and feature-chain regressions fail on the prior code and
-pass after the fix. Reverse traversal preserves cycles and deep feature chains
-without a fixed iteration cutoff. Public DTO and storage layouts are unchanged;
-existing catalog records and original retained upload claims are preserved.
-Retrying a job whose translated feature partition changes still refuses a
-different immutable intent; preserve its original bridge executable and journals
-for reconciliation rather than rewriting claims or redispatching the worker.
+## Current local evidence
 
-The initial matching Canic build passed for Root, Coordinator, Store, Registry
-and Blob. It exposed and fixed the consumer's omitted explicit Canic feature
-arrays. Managed installation then exposed IcyDB's separate asynchronous startup
-condition: Canic activation does not imply database readiness. Tests allow only
-the selected owner's typed pending diagnostic to trigger bounded progression.
-The published Testkit helper owns polling; no server pin, lifecycle driver or
-provider retry owner was added here.
+All 13 separately requested remaining native delivery targets pass: metadata,
+pins, links, formatting, complete native check/tests, strict Clippy, rustdoc,
+protocol Rust 1.88/application Rust 1.91, verified public package archives, release
+command checks, and release/publication fixtures. Actual unmodified Cargo still
+publishes, resolves, downloads and compiles through a loopback registry substitute.
+That fixture includes renamed optional dependencies and transitive feature chains.
+Linux ShellCheck, actionlint, Git-history Gitleaks, Node syntax and diff checks pass.
 
-The actual registry/blob PocketIC test passes: target-bound initialization,
-controller rejection, immutable configuration, registry-tenant inter-canister
-upload admission, exact replay, conflicting intent rejection, refusal of
-unattested publication and same-release restoration of both canisters. It uses
-Canic's published synthetic-Root fixture and validates the finalized build
-manifest, artifact union, Wasm hashes and Candid endpoints. All 18 current delivery
-targets pass, including both public archives, advertised Rust minimums, strict
-Clippy, rustdoc and release/publication fixtures. Complete evidence is retained at
-`target/validation-runs/validation.6DKFXF`; its managed build/test targets passed
-in 44s/20s, with 7.66s of IC test execution. Build attempts are under
-`target/managed-builds/attempt.8Dca7F`;
-the finalized build identity is
-`4c742c6a12fbb6a8510b3b30ad9499b3d90031da829f2f49b0edc043988d6f73`.
-Server logs remain under `target/managed-tests/attempt.mdTl7W`. Linux ShellCheck, actionlint,
-Git-history Gitleaks and diff checks pass. CI retains failure logs and archives
-the complete managed release-build directory through the shared evidence helper.
-The verified protocol archive includes the adapted module, source attribution
-and exact upstream MIT notice. Earlier managed attempts and the pre-fix Cargo
-regression failures remain retained separately.
+Retained evidence:
 
-Consumer evidence was added to existing upstream requests for
-[typed IcyDB startup qualification](https://github.com/dragginzgame/icydb/issues/315#issuecomment-6130172650),
-[a single Canic pool provider](https://github.com/dragginzgame/canic/issues/514#issuecomment-6130172579)
-and [released Blob canister-tenant tooling](https://github.com/dragginzgame/ic-blob-storage/issues/4#issuecomment-6130173055).
-Upstream feedback is separate from adopting or qualifying an upstream change.
+- Full CI runtime refusal: `target/validation-runs/validation.PmcR7q` and
+  `target/blob-worker-ci-refreshed.log`.
+- Native targets: `target/blob-worker-native-validation.log`; affected final checks
+  also pass at `target/validation-runs/validation.GtiIEC`. Exact input guard
+  baseline retained in `target/blob-worker-native-inputs.json`.
+- Static checks: `target/blob-worker-static-checks.log`.
+- Final real-tool integration: `target/blob-tooling/integration-test-compiled-worker.log`,
+  private attempt `target/blob-worker-tests/preflight.gQjEqZ` (97.31 seconds).
+  The earlier multi-leaf case is retained separately (85.79 seconds).
 
-Linux evidence does not qualify macOS. The workflow configures Ubuntu 24.04 and
-macOS 15 on Intel and Apple Silicon. The IC fixture does not prove production
-Fleet Root provisioning, cross-release schema/identity upgrades, deployed HTTP
-gateway behavior, real provider transfer, browser/verifier acceptance or paid
-retention. Standard validation does not publish, release or deploy.
+The worker integration installs clean released Blob **0.22.14** source at
+`54d8186d8db47fbb00ec7531163f34f45ad2f2f9` into an owned prefix using the documented
+source-install recipe. Its CLI, paired owner browser bundles, patched Caffeine
+SDK 1.1.2, ICP SDK 5.4.0, Playwright 1.63.0, Chromium and Node 24.21.0 are selected
+explicitly. The adapter selection/hashes remain in
+`target/blob-tooling/adapter-0.22.14-final/selection.json`; installation/build logs
+remain under `target/blob-tooling`. Dirty sibling work was not adopted.
 
-## Next qualification
+The real SDK reproduces the native declaration across multiple 1 MiB leaves for
+an incompressible archive. A real 135 MiB compiled executable exercises the
+worker identity bound. Preflight makes zero loopback requests; modified tools
+or archive bytes refuse. Real Chromium opens the original bound private profile,
+then an unauthenticated loopback IC substitute refuses certificate dispatch.
+The real native CLI retains its exact signed request, reports an uncertain outcome
+with zero provider requests, and makes exactly one service request. The worker
+stops before browser transfer/verifier/attestation and refuses redispatch without
+another request. The browser profile and private original native evidence survive.
+Fixture signer secrets remain private under the attempt directory; do not publish
+or upload it as a public CI artifact.
 
-1. Bind the maintained upstream Blob prepare/browser/verifier worker for a
-   canister tenant, preserving the exact already-granted permission and journals;
-   [IC Crates #1](https://github.com/dragginzgame/ic-crates/issues/1) owns consumer acceptance.
-2. Prove one exact archive through provider completion and registry publication
-   in a configured environment, then qualify a gateway Cargo consumer.
-3. Qualify production Fleet deployment and cross-release retained obligations
-   through upstream lifecycle contracts.
-4. Add publisher accounts, ownership, search and browsing.
+The initial octet-stream SDK mismatch and sandbox loopback refusal remain in
+separate earlier logs. They are corrected/rechecked attempts, not passing evidence.
+No accepted preparation/provider transfer/attestation/catalog journey is claimed.
+Linux execution does not qualify macOS. Process-group cleanup does not guarantee
+containment of detached descendants after forced parent termination; original
+profiles and journals remain mandatory for inspection/reconciliation.
 
-Preserve original permissions, archives, signed claims, browser profiles and
-provider/verifier journals across interruptions. An absent receipt never permits
-another transfer. No staging, commit, tag, push, release, provider effect or
-sibling edit was performed in this batch.
+## Historical IC evidence and next acceptance
+
+On the earlier compatible Canic 0.111 / IcyDB 0.270.3 graph, all 18 delivery targets
+passed at `target/validation-runs/validation.6DKFXF`. Matching all-role Canic build
+identity was `4c742c6a12fbb6a8510b3b30ad9499b3d90031da829f2f49b0edc043988d6f73`.
+Actual Registry/Blob Wasm tests covered target initialization, controller rejection,
+immutable configuration, registry-originated tenant admission, exact replay,
+conflicting intent/unattested publication refusal and same-release restoration.
+These results do not qualify the current IcyDB 0.272 graph.
+
+[Canic #33](https://github.com/dragginzgame/canic/issues/33#issuecomment-6143583291)
+owns coordinated Timers adoption. [IC Crates #1](https://github.com/dragginzgame/ic-crates/issues/1)
+owns consumer completion: qualify matching managed artifacts after adoption, then
+one exact archive through acknowledged preparation, real provider completion,
+configured verifier, live reference and registry publication; consume it through
+the HTTPS gateway with unmodified Cargo. Interruptions/lost replies must reconcile
+original identities without another uncertain transfer. The existing
+[Blob #4](https://github.com/dragginzgame/ic-blob-storage/issues/4#issuecomment-6143637031) tracks maintained
+prior-admission tooling and consumer acceptance. Production Fleet deployment,
+cross-release retained obligations and paid retention remain separate.
+
+No real checkout index/ref, package version, release, publication, deployment,
+paid/live provider effect or sibling source was changed in this batch.

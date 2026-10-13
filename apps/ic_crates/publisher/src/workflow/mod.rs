@@ -20,13 +20,13 @@ use std::{
 
 #[derive(Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct Intent {
-    configuration: String,
-    actor: String,
-    root_digest: String,
-    worker_digest: String,
-    index: IndexEntry,
-    bytes: u64,
+pub(crate) struct Intent {
+    pub(crate) configuration: String,
+    pub(crate) actor: String,
+    pub(crate) root_digest: String,
+    pub(crate) worker_digest: String,
+    pub(crate) index: IndexEntry,
+    pub(crate) bytes: u64,
 }
 
 pub(crate) struct Publisher<B> {
@@ -47,8 +47,9 @@ impl<B: Registry> Publisher<B> {
             canonical_name(&upload.index.name).map_err(|_| Error::bad("Invalid crate name."))?,
             upload.index.vers
         ));
-        let worker_digest = ic_host_fs::read::hash_file(&self.config.worker, 64 * 1024 * 1024)
-            .map_err(|_| Error::unavailable("Cannot identify selected worker."))?;
+        let worker_digest =
+            ic_host_fs::read::hash_file(&self.config.worker, crate::config::MAX_WORKER_BYTES)
+                .map_err(|_| Error::unavailable("Cannot identify selected worker."))?;
         let intent = Intent {
             configuration: serde_json::to_string(&self.config)
                 .map_err(|_| Error::bad("Invalid scope."))?,
@@ -100,7 +101,7 @@ impl<B: Registry> Publisher<B> {
                             },
                             UploadManifestHeader {
                                 name: "Content-Type".into(),
-                                value: "application/octet-stream".into(),
+                                value: "application/gzip".into(),
                             },
                         ],
                     },

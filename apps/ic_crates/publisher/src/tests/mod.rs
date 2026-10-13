@@ -83,7 +83,7 @@ impl Registry for Arc<Catalog> {
     }
 }
 
-fn config(root: &Path) -> Configuration {
+pub(crate) fn config(root: &Path) -> Configuration {
     use std::os::unix::fs::PermissionsExt;
     let worker = root.join("worker.sh");
     fs::write(
@@ -115,7 +115,7 @@ fn config(root: &Path) -> Configuration {
     }
 }
 
-fn body(version: &str, path: &str, symlink: bool) -> Vec<u8> {
+pub(crate) fn body(version: &str, path: &str, symlink: bool) -> Vec<u8> {
     let metadata = serde_json::to_vec(
         &serde_json::json!({"name":"wire_demo", "vers":"0.1.0", "deps":[],"features":{}}),
     )

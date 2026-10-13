@@ -78,7 +78,7 @@ fn receive_archive(
         },
         CaffeineHeader {
             name: "Content-Type",
-            value: "application/octet-stream",
+            value: "application/gzip",
         },
     ];
     let mut builder = CaffeineManifestBuilder::new(

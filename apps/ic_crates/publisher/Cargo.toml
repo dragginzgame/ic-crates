@@ -1,5 +1,6 @@
 [package]
 name = "ic-crates"
+default-run = "ic-crates"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -18,6 +19,7 @@ ic-agent.workspace = true
 ic-blob-storage-contracts.workspace = true
 ic-crates-protocol.workspace = true
 ic-host-fs.workspace = true
+ic-host-process.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 subtle.workspace = true

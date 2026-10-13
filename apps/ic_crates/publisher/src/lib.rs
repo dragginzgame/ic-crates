@@ -2,11 +2,14 @@
 
 #![doc = include_str!("../README.md")]
 
+mod blob_worker;
 mod config;
 mod registry;
 mod server;
 mod upload;
 mod workflow;
+
+pub use blob_worker::{preflight_blob_worker, run_blob_worker};
 
 use config::Configuration;
 use registry::IcRegistry;

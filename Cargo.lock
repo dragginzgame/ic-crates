@@ -437,7 +437,7 @@ dependencies = [
  "canic-core",
  "canic-macros",
  "ic-cdk",
- "ic-testkit",
+ "ic-testkit 0.33.8",
  "ic0",
  "serde",
  "toml 1.1.8+spec-1.1.0",
@@ -451,10 +451,10 @@ checksum = "58f3d9c9f3284ad416993e4fce76513972c75c140063293cedbec5411ebbcf43"
 dependencies = [
  "candid",
  "canic",
- "ic-blob-storage",
- "ic-blob-storage-contracts",
+ "ic-blob-storage 0.22.16",
+ "ic-blob-storage-contracts 0.22.16",
  "ic-cdk",
- "ic-memory",
+ "ic-memory 0.35.19",
 ]
 
 [[package]]
@@ -484,7 +484,7 @@ dependencies = [
  "canic-contracts",
  "canic-core",
  "ic-cdk",
- "ic-timers",
+ "ic-timers 0.17.14",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -504,10 +504,10 @@ dependencies = [
  "ic-auth",
  "ic-auth-protocol-types",
  "ic-cdk",
- "ic-memory",
+ "ic-memory 0.35.19",
  "ic-metrics 0.5.6",
  "ic-secp256k1",
- "ic-timers",
+ "ic-timers 0.17.14",
  "k256",
  "proc-macro2",
  "quote",
@@ -550,7 +550,7 @@ dependencies = [
  "serde-saphyr",
  "serde_bytes",
  "serde_json",
- "sha2 0.11.0",
+ "sha2 0.11.1",
  "syn 3.0.9",
  "thiserror 2.0.18",
  "tokio",
@@ -577,7 +577,7 @@ dependencies = [
  "canic",
  "canic-blob-service",
  "ic-cdk",
- "ic-memory",
+ "ic-memory 0.36.2",
 ]
 
 [[package]]
@@ -586,11 +586,11 @@ version = "0.2.1"
 dependencies = [
  "candid",
  "canic",
- "ic-blob-storage",
- "ic-blob-storage-contracts",
+ "ic-blob-storage 0.23.1",
+ "ic-blob-storage-contracts 0.23.1",
  "ic-cdk",
  "ic-crates-protocol",
- "ic-memory",
+ "ic-memory 0.36.2",
  "icydb",
  "serde",
  "serde_json",
@@ -864,9 +864,9 @@ dependencies = [
 
 [[package]]
 name = "crypto-common"
-version = "0.1.7"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a"
+checksum = "1bfb12502f3fc46cca1bb51ac28df9d618d813cdc3d2f25b9fe775a34af26bb3"
 dependencies = [
  "generic-array",
  "typenum",
@@ -1064,9 +1064,9 @@ dependencies = [
 
 [[package]]
 name = "deranged"
-version = "0.5.8"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
+checksum = "9e9de72ce2ad1f90dc62fa25f0f430ef85eb4b0d8fa0be4f30373bc40a21d28e"
 
 [[package]]
 name = "derive_builder"
@@ -1137,7 +1137,7 @@ checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
 dependencies = [
  "block-buffer 0.10.4",
  "const-oid 0.9.6",
- "crypto-common 0.1.7",
+ "crypto-common 0.1.6",
  "subtle",
 ]
 
@@ -1452,7 +1452,7 @@ checksum = "94e7099f6313ecacbe1256e8ff9d617b75d1bcb16a6fddef94866d225a01a14a"
 dependencies = [
  "io-lifetimes 2.0.4",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1561,9 +1561,9 @@ dependencies = [
 
 [[package]]
 name = "generic-array"
-version = "0.14.7"
+version = "0.14.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
+checksum = "4bb6743198531e02858aeaea5398fcc883e71851fcbcb5a2f773e2fb6cb1edf2"
 dependencies = [
  "typenum",
  "version_check",
@@ -1932,15 +1932,31 @@ dependencies = [
 
 [[package]]
 name = "ic-blob-storage"
-version = "0.22.13"
+version = "0.22.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "376a993b2c014d7e755d6bcf0e4de46da9bd722c9e536c97a299f0453bde4ca2"
+checksum = "fd6d0c55ef6786546104506e0a0449877ffa4faabfdcbdb5f65d9d4471fda627"
 dependencies = [
  "candid",
- "ic-blob-storage-contracts",
+ "ic-blob-storage-contracts 0.22.16",
  "ic-cdk",
  "ic-management-canister-types 0.11.0",
- "ic-memory",
+ "ic-memory 0.35.19",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ic-blob-storage"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "229f5c63b61432406595dee9e81fe636f9422587c899ac6634aad6a1769d90ad"
+dependencies = [
+ "candid",
+ "ic-blob-storage-contracts 0.23.1",
+ "ic-cdk",
+ "ic-management-canister-types 0.11.0",
+ "ic-memory 0.36.2",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -1948,14 +1964,27 @@ dependencies = [
 
 [[package]]
 name = "ic-blob-storage-contracts"
-version = "0.22.13"
+version = "0.22.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "841fae7d102d392e4822fe8a53322e11a90cb47bde2f6f5c8fdad9d3c970aeda"
+checksum = "578a6ecb13349e21c476888061e3661562b4cb12ebcf5364c80b83e7bcd915e8"
 dependencies = [
  "candid",
  "serde",
  "serde_json",
- "sha2 0.11.0",
+ "sha2 0.11.1",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ic-blob-storage-contracts"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7a0a585607d51f0dc135f541a5455df91a2352cfb1849f35e4a82801aef86e5"
+dependencies = [
+ "candid",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
  "thiserror 2.0.18",
 ]
 
@@ -2049,9 +2078,10 @@ dependencies = [
  "flate2",
  "getrandom 0.4.3",
  "ic-agent",
- "ic-blob-storage-contracts",
+ "ic-blob-storage-contracts 0.23.1",
  "ic-crates-protocol",
- "ic-host-fs 0.15.0",
+ "ic-host-fs 0.17.1",
+ "ic-host-process 0.17.1",
  "serde",
  "serde_json",
  "subtle",
@@ -2068,7 +2098,7 @@ name = "ic-crates-protocol"
 version = "0.2.1"
 dependencies = [
  "candid",
- "ic-blob-storage-contracts",
+ "ic-blob-storage-contracts 0.23.1",
  "semver",
  "serde",
  "serde_json",
@@ -2082,10 +2112,10 @@ dependencies = [
  "candid",
  "canic",
  "canic-host",
- "ic-blob-storage-contracts",
+ "ic-blob-storage-contracts 0.23.1",
  "ic-crates-protocol",
- "ic-host-fs 0.15.0",
- "ic-testkit",
+ "ic-host-fs 0.17.1",
+ "ic-testkit 0.35.1",
  "icydb",
  "serde",
  "serde_json",
@@ -2153,9 +2183,21 @@ dependencies = [
 
 [[package]]
 name = "ic-host-artifacts"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0527f9f546642e5958b3c8f54c4d1f74c3c31fac54f7a6f08d97d328f5584aca"
+checksum = "203574e6d369041cd2677652b69d22ab83b3b1bef1758824ab7609e5416ff322"
+dependencies = [
+ "flate2",
+ "sha2 0.10.9",
+ "tar",
+ "wasmparser",
+]
+
+[[package]]
+name = "ic-host-artifacts"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2ab29b7ac9f17dfd27cfe92d47c964255929e473dbe947cc31f36f150e30bf2"
 dependencies = [
  "sha2 0.10.9",
 ]
@@ -2192,11 +2234,21 @@ dependencies = [
 
 [[package]]
 name = "ic-host-fs"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a2825ae4e862622ec66c4ba4acfd38bb807ce691350168c5e2bf6c7bd8e1710"
+checksum = "14037f412d18ccdb5f20196062e2394a6679cd29c9dfeafb39edb767501460d0"
 dependencies = [
- "ic-host-artifacts 0.15.0",
+ "ic-host-artifacts 0.15.2",
+ "rustix",
+]
+
+[[package]]
+name = "ic-host-fs"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1032bf6cfae43abfe7c759191e047e813f8e967e170239a3381a0fa7672630d1"
+dependencies = [
+ "ic-host-artifacts 0.17.1",
  "rustix",
 ]
 
@@ -2220,6 +2272,30 @@ checksum = "8b3f40854bf0a2bde46b600444c7b730629a319567c8d42944f58234c80c73b1"
 dependencies = [
  "ic-host-artifacts 0.13.5",
  "ic-host-fs 0.13.5",
+ "libc",
+ "rustix",
+]
+
+[[package]]
+name = "ic-host-process"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2a45d376cb5b20f0dc67d40217a2d55e1bcde078f5be9612daff9bc53c4526a"
+dependencies = [
+ "ic-host-artifacts 0.15.2",
+ "ic-host-fs 0.15.2",
+ "libc",
+ "rustix",
+]
+
+[[package]]
+name = "ic-host-process"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9276bb2172d746147bd2ae25fc6aece4a2f2f7b339fbfd69cfcb1ebb42557dd8"
+dependencies = [
+ "ic-host-artifacts 0.17.1",
+ "ic-host-fs 0.17.1",
  "libc",
  "rustix",
 ]
@@ -2274,12 +2350,24 @@ dependencies = [
 
 [[package]]
 name = "ic-memory"
-version = "0.35.18"
+version = "0.35.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c32a72478a183e4cba2824b74242023101572809e4d028c062a1902de6b067b6"
+checksum = "605b41d358d6baacdd398f7bdc2cfe12ac770710f261b4276a437234f19c2c1b"
 dependencies = [
  "ciborium",
  "ctor",
+ "ic-stable-structures",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ic-memory"
+version = "0.36.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0836a03fd70344b6bff20a9f5d28abe2d01889627a01435de0ef2ec2b20f54d"
+dependencies = [
+ "ciborium",
  "ic-stable-structures",
  "serde",
  "thiserror 2.0.18",
@@ -2296,6 +2384,12 @@ name = "ic-metrics"
 version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65fdc32ce3d16e57750b9b8324a203ec3d7ead289b6ebbdf18cfd955d602229e"
+
+[[package]]
+name = "ic-metrics"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6de277b9f06b7c6c97817809a99439ea5524f962d3ad22afc125922ca97a7d95"
 
 [[package]]
 name = "ic-query"
@@ -2396,6 +2490,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-testkit"
+version = "0.35.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "beaa65a95ba89f8e1fe19e985c501c43a5de7a98120cc03204fbcc7629cc9586"
+dependencies = [
+ "candid",
+ "ic-cdk",
+ "ic-host-artifacts 0.15.2",
+ "ic-host-fs 0.15.2",
+ "ic-host-process 0.15.2",
+ "libc",
+ "pocket-ic",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ic-timers"
 version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2403,6 +2514,18 @@ checksum = "ba3b7e09f514412b2e1c8c26f0b2a41a14641384a8764def6354e70b1e78ace4"
 dependencies = [
  "ic-cdk-timers",
  "ic-metrics 0.6.6",
+ "ic0",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ic-timers"
+version = "0.21.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a47ea9cbe1df890fb14c4fa76d015049867469f27de78b9ee186ae337115b9c"
+dependencies = [
+ "ic-cdk-timers",
+ "ic-metrics 0.8.4",
  "ic0",
  "thiserror 2.0.18",
 ]
@@ -2593,14 +2716,14 @@ dependencies = [
 
 [[package]]
 name = "icydb"
-version = "0.270.3"
+version = "0.273.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f12da31af93df75bc19fab6c0b4b626cf59fd0be711b119fbdc6ab5e6ec8470"
+checksum = "7600491820fe1f95fb3330be37e64d94bbb9267675299c299e829cb8b411a6cd"
 dependencies = [
  "candid",
  "ic-cdk",
- "ic-memory",
- "ic-timers",
+ "ic-memory 0.36.2",
+ "ic-timers 0.21.4",
  "icydb-core",
  "icydb-diagnostic-code",
  "icydb-model",
@@ -2611,16 +2734,16 @@ dependencies = [
 
 [[package]]
 name = "icydb-core"
-version = "0.270.3"
+version = "0.273.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9814260bc840882a76e2832e9c836332e1e8f441a45d03dd74d25e252bc4e996"
+checksum = "d91d447b165de73d7aaf96dd2378ab3d39474488e47ba060ec362ebf36317bd1"
 dependencies = [
  "base64 0.23.1",
  "candid",
  "getrandom 0.4.3",
  "ic-cdk",
- "ic-memory",
- "ic-metrics 0.6.6",
+ "ic-memory 0.36.2",
+ "ic-metrics 0.8.4",
  "icydb-diagnostic-code",
  "icydb-schema",
  "num-bigint",
@@ -2636,18 +2759,18 @@ dependencies = [
 
 [[package]]
 name = "icydb-diagnostic-code"
-version = "0.270.3"
+version = "0.273.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4da21aea32a4fc7fd9053120ba7eeea7050a11bb727767cee961c1dfec1ef351"
+checksum = "a22a5a0f54a8c6ec1d0c89ffdc3a6b4e984cc524b2e0c1e94a99db779589b073"
 dependencies = [
  "remain",
 ]
 
 [[package]]
 name = "icydb-model"
-version = "0.270.3"
+version = "0.273.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49bc869ba6e6aff45e869e179a8993aad83146509c71532f7383f919104c411d"
+checksum = "34354f2ab1afee2fded7b13f8f2eb6864a6d78fb0ce74dc2be723fda185a0dbb"
 dependencies = [
  "candid",
  "convert_case 0.12.0",
@@ -2667,9 +2790,9 @@ dependencies = [
 
 [[package]]
 name = "icydb-model-macros"
-version = "0.270.3"
+version = "0.273.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f881c37be85a753cf1a2397cfeb38ecd751353a8cd58f5a0c4af4f57e7ea3d9e"
+checksum = "82f369e3116849db521b88222bfa0774ccf918cbf3672a26787271755bfdbb32"
 dependencies = [
  "convert_case 0.12.0",
  "darling 0.24.1",
@@ -2684,9 +2807,9 @@ dependencies = [
 
 [[package]]
 name = "icydb-schema"
-version = "0.270.3"
+version = "0.273.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b547b32e6f7b5aaaf5c588c8bb7866906fb66c76afc2543cbb5cf363bb4a83c0"
+checksum = "35673c63c3b232713a5a68ed228f4efe2a69b0daa6bf2fbfba5bb1b9c9e7525f"
 dependencies = [
  "candid",
  "derive_more",
@@ -2745,7 +2868,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20fd6de4ccfcc187e38bc21cfa543cb5a302cb86a8b114eb7f0bf0dc9f8ac00f"
 dependencies = [
  "io-lifetimes 3.0.1",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -3851,9 +3974,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-native-certs"
-version = "0.8.4"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dab5152771c58876a2146916e53e35057e1a4dfa2b9df0f0305b07f611fdea4d"
+checksum = "4a073f5dc7469f984c52ad2752b63b0807745133b6de880b7b64c1ac4c48aec4"
 dependencies = [
  "openssl-probe",
  "rustls-pki-types",
@@ -4165,9 +4288,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "446ba717509524cb3f22f17ecc096f10f4822d76ab5c0b9822c5f9c284e825f4"
+checksum = "47d7069beb7d6ac7b9acd1039986e73443f24234f41074da099d6f994ac9ad19"
 dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
@@ -5155,7 +5278,25 @@ version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
 dependencies = [
- "windows-targets",
+ "windows-targets 0.52.6",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.59.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e38bc4d79ed67fd075bcc251a1c39b32a1776bbe92e5bef1f0bf1f8c531853b"
+dependencies = [
+ "windows-targets 0.52.6",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.60.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb"
+dependencies = [
+ "windows-targets 0.53.5",
 ]
 
 [[package]]
@@ -5173,14 +5314,31 @@ version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b724f72796e036ab90c1021d4780d4d3d648aca59e491e6b98e725b84e99973"
 dependencies = [
- "windows_aarch64_gnullvm",
- "windows_aarch64_msvc",
- "windows_i686_gnu",
- "windows_i686_gnullvm",
- "windows_i686_msvc",
- "windows_x86_64_gnu",
- "windows_x86_64_gnullvm",
- "windows_x86_64_msvc",
+ "windows_aarch64_gnullvm 0.52.6",
+ "windows_aarch64_msvc 0.52.6",
+ "windows_i686_gnu 0.52.6",
+ "windows_i686_gnullvm 0.52.6",
+ "windows_i686_msvc 0.52.6",
+ "windows_x86_64_gnu 0.52.6",
+ "windows_x86_64_gnullvm 0.52.6",
+ "windows_x86_64_msvc 0.52.6",
+]
+
+[[package]]
+name = "windows-targets"
+version = "0.53.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4945f9f551b88e0d65f3db0bc25c33b8acea4d9e41163edf90dcd0b19f9069f3"
+dependencies = [
+ "windows-link",
+ "windows_aarch64_gnullvm 0.53.1",
+ "windows_aarch64_msvc 0.53.1",
+ "windows_i686_gnu 0.53.1",
+ "windows_i686_gnullvm 0.53.1",
+ "windows_i686_msvc 0.53.1",
+ "windows_x86_64_gnu 0.53.1",
+ "windows_x86_64_gnullvm 0.53.1",
+ "windows_x86_64_msvc 0.53.1",
 ]
 
 [[package]]
@@ -5190,10 +5348,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a4622180e7a0ec044bb555404c800bc9fd9ec262ec147edd5989ccd0c02cd3"
 
 [[package]]
+name = "windows_aarch64_gnullvm"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9d8416fa8b42f5c947f8482c43e7d89e73a173cead56d044f6a56104a6d1b53"
+
+[[package]]
 name = "windows_aarch64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09ec2a7bb152e2252b53fa7803150007879548bc709c039df7627cabbd05d469"
+
+[[package]]
+name = "windows_aarch64_msvc"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9d782e804c2f632e395708e99a94275910eb9100b2114651e04744e9b125006"
 
 [[package]]
 name = "windows_i686_gnu"
@@ -5202,10 +5372,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e9b5ad5ab802e97eb8e295ac6720e509ee4c243f69d781394014ebfe8bbfa0b"
 
 [[package]]
+name = "windows_i686_gnu"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "960e6da069d81e09becb0ca57a65220ddff016ff2d6af6a223cf372a506593a3"
+
+[[package]]
 name = "windows_i686_gnullvm"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0eee52d38c090b3caa76c563b86c3a4bd71ef1a819287c19d586d7334ae8ed66"
+
+[[package]]
+name = "windows_i686_gnullvm"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa7359d10048f68ab8b09fa71c3daccfb0e9b559aed648a8f95469c27057180c"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -5214,10 +5396,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "240948bc05c5e7c6dabba28bf89d89ffce3e303022809e73deaefe4f6ec56c66"
 
 [[package]]
+name = "windows_i686_msvc"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e7ac75179f18232fe9c285163565a57ef8d3c89254a30685b57d83a38d326c2"
+
+[[package]]
 name = "windows_x86_64_gnu"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78"
+
+[[package]]
+name = "windows_x86_64_gnu"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c3842cdd74a865a8066ab39c8a7a473c0778a3f29370b5fd6b4b9aa7df4a499"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
@@ -5226,10 +5420,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d"
 
 [[package]]
+name = "windows_x86_64_gnullvm"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ffa179e2d07eee8ad8f57493436566c7cc30ac536a3379fdf008f47f6bb7ae1"
+
+[[package]]
 name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "windows_x86_64_msvc"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
 
 [[package]]
 name = "winnow"
@@ -5256,7 +5462,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f3fd376f71958b862e7afb20cfe5a22830e1963462f3a17f49d82a6c1d1f42d"
 dependencies = [
  "bitflags",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

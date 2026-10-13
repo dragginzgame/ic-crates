@@ -5,6 +5,9 @@ use candid::Principal;
 use serde::{Deserialize, Serialize};
 use std::{net::SocketAddr, path::PathBuf};
 
+/// Bound selected worker hashing, including supported debug builds.
+pub(crate) const MAX_WORKER_BYTES: u64 = 256 * 1024 * 1024;
+
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Configuration {

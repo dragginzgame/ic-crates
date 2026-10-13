@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0]
+
+- Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.
+- Accept selected worker executables up to 256 MiB, including the supported debug build.
+- Bind explicit tools, signers and budgets to retained original jobs; refuse redispatch and leave final publication confirmation with the registry.
+- **Breaking:** hash new archive manifests with `Content-Type: application/gzip` to match the upstream SDK. Existing jobs require their original worker and journals; do not rewrite admitted manifests or repeat uncertain transfers.
+- Exercise a clean released Blob tool selection, real SDK manifest agreement across multiple leaves, Chromium refusal and retained signed uncertainty against a local substitute.
+- Select managed server tooling from the test harness's resolved Testkit dependency when upstream SDKs retain another Testkit version. Retain IcyDB 0.272 pending compatible Canic runtime adoption.
+
 ## [0.2.1] - 2026-10-12
 
 - Port crates.io dependency alias and transitive feature-splitting behavior, allowing underscore-prefixed aliases and keeping extended feature chains together in the Cargo index.

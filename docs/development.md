@@ -2,10 +2,11 @@
 
 The default Cargo workspace builds from a fresh checkout with released
 dependencies; sibling repositories are not required. `Cargo.lock` fixes the
-selected dependency graph. Canic 0.111 and IcyDB 0.270.3 both use Timers 0.17,
-and all canister paths share Memory 0.35. `make runtime-check` verifies identities.
-IcyDB 0.271 requires Timers 0.19, so it needs coordinated Canic adoption before
-this canister graph can select it.
+selected dependency graph. The user-selected IcyDB 0.272 requires Timers 0.21;
+Canic 0.111 still requires Timers 0.17. `make runtime-check` rejects that graph
+until compatible Canic adoption. Keep the guard intact and distinguish native
+checks from pending managed IC qualification. Earlier 0.270.3 evidence does not
+qualify this selection.
 
 ## Setup
 
@@ -26,7 +27,8 @@ make tools-check
 
 Common installers verify pinned downloads and reuse the shared executable store.
 The local product extension selects the Canic CLI matching locked Canic and
-the server CLI from locked IC Testkit through the common Rust installer.
+the server CLI from the test harness's resolved direct IC Testkit dependency
+through the common Rust installer, even if an upstream SDK retains another version.
 Testkit owns PocketIC setup, compatibility checks, launch and cleanup; this
 repository carries no server download pin or alternate launcher.
 `make install-hooks` activates the reviewed formatting
@@ -39,6 +41,7 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make check`, `make test`, `make clippy`, `make docs-check` | Focused native Rust checks |
 | `make fmt`, `make fmt-check` | Shared Cargo sorting and Rust formatting |
 | `make ci` | Complete native and managed IC delivery gate with retained failure logs |
+| `make test-blob-worker` | Opt-in real SDK/Chromium local refusal test with explicit tool configuration ([setup](blob-worker.md)) |
 | `make managed-build` | Build all five roles through the matching Canic CLI |
 | `make test-ic` | Install registry/blob artifacts and test actual IC admission/restoration |
 | `make install-app-tools`, `make app-tools-check` | Prepare/check Canic and Testkit product tools |

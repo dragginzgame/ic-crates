@@ -17,7 +17,7 @@ GITLEAKS ?= $(CURDIR)/.tools/ci/bin/gitleaks
         release-version release-preflight release-verify release-prepare-version \
         release-prepared-check release-files release-commit-check release-committed-check \
         release-tagged-check release-push-check install-validation-tools lint check-secrets
-.PHONY: install-app-tools app-tools-check managed-build test-ic
+.PHONY: install-app-tools app-tools-check managed-build test-ic test-blob-worker
 
 help:
 	@echo 'deps / install-tools / tools-check: prepare dependencies and the common toolset'
@@ -72,7 +72,7 @@ check-pins:
 check-doc-links:
 	perl scripts/ci/check-documentation-links.pl --root "$(CURDIR)" \
 		README.md AGENTS.md CHANGELOG.md docs/status/current.md docs/development.md \
-		docs/publishing.md docs/cargo-publish.md crates/ic-crates-protocol/README.md \
+		docs/publishing.md docs/cargo-publish.md docs/blob-worker.md crates/ic-crates-protocol/README.md \
 		crates/ic-crates-protocol/UPSTREAM.md \
 		apps/ic_crates/publisher/README.md DRAGGINZGAME.md \
 		rules/*.md tasks/*.md audits/*.md docs/principles/*.md docs/supported-hosts.md \
@@ -100,6 +100,10 @@ app-tools-check:
 
 managed-build:
 	+bash scripts/ci/managed-ic.sh build
+
+test-blob-worker:
+	@test -n "$(IC_CRATES_BLOB_TEST_CONFIGURATION)" || { echo "Select IC_CRATES_BLOB_TEST_CONFIGURATION; see docs/blob-worker.md" >&2; exit 1; }
+	+cargo test --offline --locked -p ic-crates real_sdk_preflight -- --ignored --nocapture
 
 test-ic:
 	+bash scripts/ci/managed-ic.sh test
