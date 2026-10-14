@@ -50,18 +50,17 @@ git -C "$fixture/repo" config tag.gpgsign false
 git init --bare -q "$fixture/remote.git"
 git -C "$fixture/repo" remote add origin "$fixture/remote.git"
 cd "$fixture/repo"
+# Own the fixture's draft; published source need not have pending release notes.
+previous="$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)"
+kind='patch'
+candidate="$(bash scripts/ci/next-release-version.sh "$previous" "$kind")"
+printf '# Changelog\n\n## [%s]\n\n- Exercise isolated release recovery.\n\n## [%s] - 2020-01-01\n\n- Previous fixture release.\n' \
+    "$candidate" "$previous" > CHANGELOG.md
 # This index is disposable. Never stage or mutate the consumer checkout's index.
 git add .
 git commit -qm 'Fixture source'
 git push -q -u origin main
 source="$(git rev-parse HEAD)"
-previous="$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)"
-candidate="$(awk '/^## \[[0-9]+\.[0-9]+\.[0-9]+\]$/ { gsub(/^## \[|\]$/, ""); print; exit }' CHANGELOG.md)"
-kind=''
-for component in patch minor major; do
-    if [[ "$candidate" == "$(bash scripts/ci/next-release-version.sh "$previous" "$component")" ]]; then kind="$component"; break; fi
-done
-[[ -n "$kind" ]] || { echo 'Fixture requires one valid next-version draft.' >&2; exit 1; }
 date="$(date -u +%Y-%m-%d)"
 export RELEASE_SOURCE="$source" RELEASE_PREVIOUS="$previous" RELEASE_VERSION="$candidate" RELEASE_DATE="$date"
 cp Cargo.lock "$fixture/original.lock"

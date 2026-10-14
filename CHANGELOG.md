@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2]
+
+### Fixed
+
+- Give release regression fixtures their own draft notes, so checks work on
+  finalized source without adding an unrelated pending changelog entry
+  ([#4 — Isolate release fixtures from source changelog drafts](https://github.com/dragginzgame/ic-crates/issues/4)).
+
 ## [0.2.1] - 2026-10-12
 
 - Port crates.io dependency alias and transitive feature-splitting behavior, allowing underscore-prefixed aliases and keeping extended feature chains together in the Cargo index.
