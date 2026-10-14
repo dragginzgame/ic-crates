@@ -50,7 +50,7 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make tasks`, `make cloc` | Shared maintenance catalog and Rust LOC |
 
 Use relevant narrow checks for development and handoff under the
-[validation cadence](../AGENTS.md#validation-cadence-during-shared-policy-adoption).
+[validation cadence](../AGENTS.md#validation-policy).
 `make ci` and Linux lint/security remain the full release checks.
 No standard validation command publishes, releases or deploys.
 Package checks use Cargo's normal registry handling to verify the CLI against
