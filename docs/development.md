@@ -49,8 +49,10 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make shared-tooling-check`, `make check-pins` | Snapshot integrity and declared dependency policy |
 | `make tasks`, `make cloc` | Shared maintenance catalog and Rust LOC |
 
-Run relevant narrow checks while coding; complete `make ci` and Linux lint/security
-before delivery. No standard validation command publishes, releases or deploys.
+Use relevant narrow checks for development and handoff under the
+[validation cadence](../AGENTS.md#validation-cadence-during-shared-policy-adoption).
+`make ci` and Linux lint/security remain the full release checks.
+No standard validation command publishes, releases or deploys.
 Package checks use Cargo's normal registry handling to verify the CLI against
 the newly staged protocol archive. They preserve `--locked`; explicitly offline
 callers can fail at Cargo's staged-registry unpack step even with external caches
