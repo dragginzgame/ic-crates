@@ -2,8 +2,8 @@
 
 The default Cargo workspace builds from a fresh checkout with released
 dependencies; sibling repositories are not required. `Cargo.lock` fixes the
-selected dependency graph. The user-selected IcyDB 0.272 requires Timers 0.21;
-Canic 0.111 still requires Timers 0.17. `make runtime-check` rejects that graph
+selected dependency graph. The user-selected IcyDB 0.273 / Blob 0.23 graph uses
+Memory 0.36 and Timers 0.21; Canic 0.111 uses Memory 0.35 and Timers 0.17. `make runtime-check` rejects that graph
 until compatible Canic adoption. Keep the guard intact and distinguish native
 checks from pending managed IC qualification. Earlier 0.270.3 evidence does not
 qualify this selection.

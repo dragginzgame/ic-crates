@@ -2,7 +2,7 @@
 
 [IC Crates](https://github.com/dragginzgame/ic-crates) contains a controller-operated
 IC registry and native Cargo upload bridge. The user released **0.2.1**, tag
-`v0.2.1`, commit `aea8719`. Package versions remain 0.2.1. The current uncommitted
+`v0.2.1`, commit `aea8719`. Package versions remain 0.2.1. The user committed worker preparation at `e878337`; the pending
 worker batch is recorded under pending **0.3.0** because new archive manifests
 change their hashed MIME type. The user owns staging, commits, releases,
 publication, deployment and paid effects.
@@ -47,17 +47,17 @@ as the upstream port reference; existing adaptations and MIT attribution remain
 | Owner | Locked selection |
 | --- | --- |
 | Canic family | 0.111.0 |
-| IcyDB family | 0.272.0, explicitly retained by the user |
-| IC Blob Storage/contracts | 0.22.15 |
-| IC Memory | 0.35.19 |
-| IC Timers | 0.17.14 through Canic; 0.21.1 through IcyDB |
+| IcyDB family | 0.273.0, selected by the user |
+| IC Blob Storage/contracts | direct 0.23.1; Canic adapter retains 0.22.16 |
+| IC Memory | 0.35.19 through Canic; 0.36.2 through the updated components |
+| IC Timers | 0.17.14 through Canic; 0.21.4 through IcyDB |
 | Direct harness IC Testkit | 0.35.1; Canic/testing retains 0.33.8 |
 | Native IC Agent | 0.49.2 |
-| Direct native Host FS/Process | 0.15.2 |
+| Direct native Host FS/Process | 0.17.1 |
 | Shared Tooling | 0.9.5, `b1630b89482cc6071fc928a86962d79c9c11fdb7` |
 
 The selected graph deliberately awaits compatible Canic adoption. The unchanged
-runtime gate rejects two Timers identities. `make ci` passes snapshot, tools and
+runtime gate rejects both Memory and Timers splits and now reports their versions. `make ci` passes snapshot, tools and
 metadata checks, then fails `runtime-check`; current managed builds/PocketIC
 qualification are pending. No downgrade, local sibling override or weakened gate
 was introduced. Host tooling's other FS/Process versions are outside the canister
@@ -65,14 +65,31 @@ runtime. The Testkit installer selects the harness's resolved direct dependency,
 using Shared Tooling's canonical installer and Testkit-owned server setup rather
 than assuming every upstream SDK has the same Testkit version.
 
-Final input SHA-256:
+Current input SHA-256:
 
-- Cargo.lock: `4fc1c2171d6a2edf6b309c21a3bef100643c0221314b7c79c71e793a75d5af89`.
-- Cargo.toml: `c6f91e4a628b1e6e138a357e995f2b4d6b76522572e974a33caa87beac5511a4`.
+- Cargo.lock: `10da2eaa5b0f0f8147cc3d4e0e2269d7f38df0a5fd89943e7b854d0ea2238f26`.
+- Cargo.toml: `7c56b89c2e49c72bca5f0c21b3324bdbb8e8fae46c3785fcf296e87de32d2b84`.
 
-## Current local evidence
+Normal-Wasm inverse traces confirm Canic Core 0.111 owns Memory 0.35.19 and
+Timers 0.17.14; direct Memory/Blob/IcyDB own Memory 0.36.2 and IcyDB owns
+Timers 0.21.4. The current diagnostic is retained at
+`target/runtime-current-diagnostic.log`. The fresh full CI attempt at
+`target/validation-runs/validation.gQGRP5` passes snapshot/tools/metadata and
+refuses both runtime splits. Shell/workflow lint, secret scan, formatting and
+document links pass in `target/runtime-diagnostic-static-checks.log`. Registry lookup cannot find Canic 0.112.0;
+GitHub's latest tag remains 0.111.0. Framework adoption must precede qualification.
+The intended application boundary is Canic; current direct Blob client/CLI paths
+remain adapter work, not proof of an entirely Canic-facing integration.
 
-All 13 separately requested remaining native delivery targets pass: metadata,
+## Earlier local evidence — prior dependency graph
+
+The evidence below used IcyDB 0.272, Blob/contracts 0.22.15 and native Host 0.15.2.
+Its Cargo.lock SHA-256 was `4fc1c2171d6a2edf6b309c21a3bef100643c0221314b7c79c71e793a75d5af89`;
+Cargo.toml SHA-256 was `c6f91e4a628b1e6e138a357e995f2b4d6b76522572e974a33caa87beac5511a4`.
+These checks and the frozen Blob 0.22.14 tool route do not qualify the newly
+selected 0.273 / 0.23 / Host 0.17 graph.
+
+All 13 separately requested remaining native delivery targets passed: metadata,
 pins, links, formatting, complete native check/tests, strict Clippy, rustdoc,
 protocol Rust 1.88/application Rust 1.91, verified public package archives, release
 command checks, and release/publication fixtures. Actual unmodified Cargo still
@@ -127,9 +144,9 @@ identity was `4c742c6a12fbb6a8510b3b30ad9499b3d90031da829f2f49b0edc043988d6f73`.
 Actual Registry/Blob Wasm tests covered target initialization, controller rejection,
 immutable configuration, registry-originated tenant admission, exact replay,
 conflicting intent/unattested publication refusal and same-release restoration.
-These results do not qualify the current IcyDB 0.272 graph.
+These results do not qualify the current IcyDB 0.273 graph.
 
-[Canic #33](https://github.com/dragginzgame/canic/issues/33#issuecomment-6143583291)
+[Canic #33](https://github.com/dragginzgame/canic/issues/33#issuecomment-6145063926)
 owns coordinated Timers adoption. [IC Crates #1](https://github.com/dragginzgame/ic-crates/issues/1)
 owns consumer completion: qualify matching managed artifacts after adoption, then
 one exact archive through acknowledged preparation, real provider completion,

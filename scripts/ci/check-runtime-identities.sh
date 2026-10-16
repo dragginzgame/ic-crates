@@ -10,6 +10,13 @@ jq -e '
   | ["ic-memory", "ic-timers"]
   | all(.[]; . as $name | [$packages[] | select(.name == $name)] | length == 1)
 ' "$scratch/metadata.json" >/dev/null || {
+    jq -r '
+      .packages as $packages
+      | ["ic-memory", "ic-timers"][] as $name
+      | [$packages[] | select(.name == $name)] as $selected
+      | select($selected | length != 1)
+      | "\($name): \($selected | map("\(.version) (\(.source // "local source"))") | join(", "))"
+    ' "$scratch/metadata.json" >&2
     echo 'Canister graphs require one Memory identity and one Timers identity.' >&2
     exit 1
 }

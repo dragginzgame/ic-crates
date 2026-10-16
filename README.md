@@ -11,7 +11,7 @@ An unmodified Cargo client can publish, resolve, download and build through the
 bridge in local fixture tests. Deployed IC/provider acceptance remains unqualified.
 Earlier compatible-graph PocketIC evidence covers registry/blob installation,
 tenant admission, controller rejection and restoration. The currently selected
-IcyDB 0.272 graph awaits compatible Canic runtime adoption. The native
+IcyDB 0.273 / Blob 0.23 graph awaits compatible Canic runtime adoption. The native
 [Blob worker](docs/blob-worker.md) now has real SDK/Chromium local refusal evidence.
 See [current evidence](docs/status/current.md).
 
@@ -40,8 +40,9 @@ cover dependency alias validation and transitive Cargo feature splitting.
 
 Canic owns lifecycle and the memory allocation pool; IcyDB participates
 synchronously after restoration. Each canister graph has one Memory and Timers
-identity. The selected IcyDB 0.272 requires Timers 0.21 while Canic 0.111 still uses
-Timers 0.17. This deliberate pending selection fails `make runtime-check`;
+identity. The selected IcyDB 0.273 / Blob 0.23 graph uses Memory 0.36 and
+Timers 0.21, while Canic 0.111 uses Memory 0.35 and Timers 0.17.
+This pending selection fails `make runtime-check`;
 IC qualification awaits compatible Canic adoption.
 
 ## Publication
