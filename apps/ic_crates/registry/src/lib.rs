@@ -19,17 +19,6 @@ canic::memory::memory_allocation_pool!(
     exclusions = [],
 );
 
-fn icydb_memory_pool()
--> Result<icydb::db::MemoryAllocationPool, icydb::db::MemoryAllocationPoolError> {
-    canic::memory::pool::framework_pool(
-        vec![icydb::db::MemoryAuthority::new(
-            DATABASE_AUTHORITY,
-            DATABASE_PREFIX,
-        )?],
-        Vec::new(),
-    )
-}
-
 canic::memory::memory_bootstrap_admission!(
     identity = canic::memory::admission::PolicyIdentity::new("icydb.logical-memory-admission", 1)
         .expect("constant valid IcyDB admission identity"),
@@ -43,10 +32,20 @@ canic::start!(lifecycle_participant(
 ),);
 
 fn initialize_database() {
+    bind_database_runtime();
     crate::__icydb_lifecycle_participant::init();
 }
 fn restore_database() {
+    bind_database_runtime();
     crate::__icydb_lifecycle_participant::post_upgrade();
+}
+
+// Canic has committed all component requests before this synchronous participant.
+fn bind_database_runtime() {
+    let runtime = canic::memory::runtime::shared_runtime()
+        .expect("Canic must commit the registry host memory before database startup");
+    icydb::db::bind_memory_runtime(runtime)
+        .expect("the registry database must share Canic's committed runtime");
 }
 
 #[expect(clippy::unused_async, reason = "Canic deferred lifecycle signatures")]
