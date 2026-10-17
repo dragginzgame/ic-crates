@@ -2,6 +2,8 @@
 
 ## [0.3.0]
 
+- Prepare explicit Canic-to-IcyDB runtime binding before both synchronous lifecycle participants, and remove the duplicate IcyDB pool provider. Qualification awaits compatible producer releases and one Memory/Timers identity.
+
 - Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.
 - Accept selected worker executables up to 256 MiB, including the supported debug build.
 - Bind explicit tools, signers and budgets to retained original jobs; refuse redispatch and leave final publication confirmation with the registry.

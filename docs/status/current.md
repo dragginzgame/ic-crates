@@ -159,3 +159,14 @@ cross-release retained obligations and paid retention remain separate.
 
 No real checkout index/ref, package version, release, publication, deployment,
 paid/live provider effect or sibling source was changed in this batch.
+
+## Explicit runtime handoff preparation
+
+The registry participant binds Canic's committed runtime before invoking IcyDB
+on install and post-upgrade. Its duplicate IcyDB pool provider is removed; Canic
+retains the final host grants. This depends on [Canic #595](https://github.com/dragginzgame/canic/pull/595)
+and [IcyDB #376](https://github.com/dragginzgame/icydb/pull/376). The selected
+released dependency graph is unchanged and remains unqualified: adopt compatible
+producer releases, establish one Memory/Timers identity, then compile and run
+the managed registry/blob lifecycle and recovery cases. Source qualification of
+the paired owners is not qualification of this application's released graph.
