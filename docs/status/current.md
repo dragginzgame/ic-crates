@@ -159,3 +159,29 @@ cross-release retained obligations and paid retention remain separate.
 
 No real checkout index/ref, package version, release, publication, deployment,
 paid/live provider effect or sibling source was changed in this batch.
+
+
+## Prepared Blob client boundary — 2026-10-18
+
+The isolated contribution replaces the registry's two Core client imports with
+`ic_blob_storage_client::{admission, download}` and selects Client/Contracts 0.35.
+Blob owns these unchanged replicated calls and codecs; registry intent, catalog
+policy and Canic endpoint/lifecycle ownership remain local. The native bridge
+and worker selection are unchanged. Core still exists transitively through the
+actual Canic Blob component; this does not remove its service implementation.
+
+Client 0.35 is not yet published. The committed lockfile is deliberately retained
+until the family is available, so this draft is not a locked runnable adoption.
+Before merging, refresh the real registry lock against the published family and
+qualify the coherent Canic/IcyDB graph. No path overrides belong in that lock.
+The existing runtime handoff remains with PR #7; this contribution does not
+supersede its framework or storage work.
+
+A captured candidate using the exact proposed Client/Contracts sources compiles
+those packages and then reaches three Memory type mismatches in the registry.
+The unchanged registry source against its original released dependencies reports
+the same three mismatches: this adoption does not establish a new regression or
+a passing managed build. Candidate source patches qualify only the call shape,
+not publication or deployment. Focused logs and failed prerequisites remain in
+the Blob owner's `.tmp/review-validation/client-boundary0350/`. No full CI,
+installed registry journey, native macOS, publication or deployment is claimed.
