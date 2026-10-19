@@ -2,8 +2,8 @@
 
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize};
 
-use ic_blob_storage::ops::service::reads::download::client::ReplicatedDownloadClient;
-use ic_blob_storage::ops::service::uploads::admission::client::ReplicatedUploadAdmissionClient;
+use ic_blob_storage_client::admission::ReplicatedUploadAdmissionClient;
+use ic_blob_storage_client::download::ReplicatedDownloadClient;
 use ic_blob_storage_contracts::dto::upload::admission::{
     UploadAdmissionMutation, UploadAdmissionRequest, UploadAdmissionResponse,
 };

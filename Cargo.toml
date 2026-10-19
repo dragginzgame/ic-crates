@@ -23,8 +23,8 @@ canic-host = { version = "0.111.0", default-features = false }
 flate2 = "1.1"
 getrandom = "0.4"
 ic-agent = { version = "0.49.2", default-features = false, features = ["pem", "ring"] }
-ic-blob-storage = "0.25"
-ic-blob-storage-contracts = "0.25"
+ic-blob-storage-client = "0.35"
+ic-blob-storage-contracts = "0.35"
 ic-cdk = "0.20.3"
 ic-crates-protocol = { version = "0.2.1", path = "crates/ic-crates-protocol" }
 ic-host-fs = "0.19"

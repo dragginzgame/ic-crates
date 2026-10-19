@@ -159,3 +159,51 @@ cross-release retained obligations and paid retention remain separate.
 
 No real checkout index/ref, package version, release, publication, deployment,
 paid/live provider effect or sibling source was changed in this batch.
+
+
+## Published Blob client adoption — 2026-10-19
+
+The isolated contribution replaces the registry's two Core client imports with
+`ic_blob_storage_client::{admission, download}` and selects published
+Client/Contracts 0.35.0. Blob owns these unchanged replicated calls and codecs;
+registry intent, catalog policy and Canic endpoint/lifecycle ownership remain
+local. The native bridge and worker selection are unchanged. Core 0.22.16 still
+exists transitively through the actual Canic Blob component.
+
+The registry publication prerequisite is satisfied. The targeted lock refresh
+removes direct Core/Contracts 0.25.1 and adds Client/Contracts 0.35.0 plus their
+required Platform 0.1.15, Wire 0.4.4 and postcard support. All unrelated registry
+package selections are unchanged. No path/source override or new runtime owner
+is introduced. Current lock SHA-256: `62f95de0d33f1e6be6b8415e6636e23acfc1e3788032c60190937ab6870a94ee`.
+
+Locked registry resolution and source fetch pass. A native Linux
+`cargo check --offline --locked -p canister_ic_crates_registry --lib` compiles the
+actual published Client/Contracts packages, then reports the same three existing
+Memory mismatches in registry bootstrap: MemoryAuthority, MemoryAllocationPool
+and BootstrapAdmission. Earlier unchanged-baseline comparison retained those
+three failures too. `make runtime-check` still refuses Memory
+0.35.19/0.36.4/0.38.0 and Timers 0.17.14/0.22.6. Neither gate is weakened.
+The existing runtime/database handoff remains with [PR #7](https://github.com/dragginzgame/ic-crates/pull/7);
+this contribution does not supersede framework or storage work.
+
+At the pre-refresh head `73f9fb5d5`, all three native jobs in
+[run 39146224050](https://github.com/dragginzgame/ic-crates/actions/runs/39146224050)
+stop during cold-cache common-tool setup (`no matching package named candid`
+under offline Cargo), before application compilation. Lint/security passes.
+[#9](https://github.com/dragginzgame/ic-crates/issues/9) owns setup ordering;
+new-head CI must be inspected independently. The local locked check above
+reaches the application and distinguishes its runtime failure from setup.
+
+The refreshed lock removes the unpublished-package blocker, not managed
+acceptance. Keep [draft #11](https://github.com/dragginzgame/ic-crates/pull/11)
+open until the existing Canic/IcyDB graph converges and actual registry/Blob
+artifacts and same-release recovery pass. [#12](https://github.com/dragginzgame/ic-crates/issues/12)
+owns adoption; #1 retains provider/archive acceptance and #10 the later mutation
+protocol cut. Blob's pending Contracts catalogue repair is tracked in
+[Blob #88/#89](https://github.com/dragginzgame/ic-blob-storage/pull/89).
+
+Focused formatting, documentation-link and diff checks pass. Raw attempts and
+lock before/after evidence remain with the Blob owner under
+`.tmp/review-validation/pr-refresh0351/`; the earlier candidate-source comparison
+remains under `.tmp/review-validation/client-boundary0350/`. No full local suite,
+installed registry journey, native macOS, publication or deployment is claimed.
