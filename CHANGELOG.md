@@ -2,7 +2,7 @@
 
 ## [0.3.0]
 
-- Route registry admission/download calls through Blob’s client-only package instead of depending directly on its service implementation. This adoption awaits Client/Contracts 0.35 publication and a refreshed registry lockfile; the existing Canic/IcyDB runtime convergence remains required.
+- Route registry admission/download calls through Blob’s client-only package instead of depending directly on its service implementation. Resolve published Client/Contracts 0.35.0 in the registry lockfile; existing Canic/IcyDB runtime convergence and managed acceptance remain required.
 
 - Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.
 - Accept selected worker executables up to 256 MiB, including the supported debug build.
