@@ -22,9 +22,21 @@ Read [the current handoff](docs/status/current.md), then apply the reviewed
 - The native bridge uses IC Host FS for durable files/locks and Blob Storage's
   manifest builder. Its selected provider worker owns SDK/browser/verifier journals.
   Never replay that worker from a Cargo retry or infer completion from its exit code.
-- Run focused development checks; complete `make ci` and Linux `make lint
-  check-secrets` before delivery. Support Linux x86-64 and macOS 15 on Intel and
+- Full release checks are `make ci` and Linux `make lint check-secrets`;
+  focused development/handoff follows the validation cadence below.
+  Support Linux x86-64 and macOS 15 on Intel and
   Apple Silicon; Linux evidence does not qualify macOS.
 - Check active builds before editing/building. Preserve source, tools, artifacts,
   failure evidence and unrelated changes. Readiness does not authorize release targets.
 - GitHub issues track follow-up work; status documents summarize evidence.
+
+## Validation policy
+
+Apply Shared Tooling's [canonical validation cadence](https://github.com/dragginzgame/shared-tooling/blob/4256171b5b7ec4c4cc4078548c1c1617ee150699/DRAGGINZGAME.md#validation-and-evidence),
+adopted by exact revision `4256171b5b7ec4c4cc4078548c1c1617ee150699` (0.12.5).
+This revision-bound policy reference supersedes only the validation cadence in
+our older snapshot; executable tooling and all other shared rules retain their
+recorded snapshot revision. Local guidance supplies commands and product
+qualification requirements. Configured CI and release gates remain unchanged.
+On snapshot adoption of this policy, replace this separate reference with the
+local baseline link; do not keep a duplicate cadence or temporary exception.
