@@ -90,7 +90,7 @@ package-check publish-dry-run:
 ci:
 	+@bash scripts/ci/run-validation-targets.sh --fail-fast \
 		shared-tooling-check tools-check test-tool-setup metadata-check runtime-check check-pins \
-		check-doc-links fmt-check check test clippy docs-check msrv-check \
+		check-doc-links fmt-check clippy check test docs-check msrv-check \
 		package-check check-release-commands test-release test-publish managed-build test-ic
 
 test-tool-setup:

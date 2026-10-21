@@ -14,7 +14,7 @@ trap finish EXIT
 mkdir -p "$fixture/consumer/scripts/ci" "$fixture/consumer/scripts/dev" "$fixture/bin" "$fixture/cache"
 cp "$root/Makefile" "$root/Cargo.lock" "$fixture/consumer/"
 cp -R "$root/make" "$fixture/consumer/"
-cp "$root/scripts/ci/"{managed-ic,check-make-execution}.sh "$fixture/consumer/scripts/ci/"
+cp "$root/scripts/ci/"{managed-ic,check-make-execution,run-validation-targets,verify-file-checksum}.sh "$fixture/consumer/scripts/ci/"
 for helper in host ic; do
     printf '#!/usr/bin/env bash\nexit 0\n' > "$fixture/consumer/scripts/dev/install-$helper-tools.sh"
 done
@@ -69,5 +69,36 @@ status=0
 (cd "$fixture/consumer"; bash scripts/ci/managed-ic.sh check) > "$fixture/metadata-refusal.log" 2>&1 || status=$?
 [[ "$status" == 41 ]] || exit 1
 cmp "$root/Cargo.lock" "$fixture/consumer/Cargo.lock"
+# Exercise the actual CI recipe and shared runner while substituting only child
+# target effects. Clippy refusal must stop compilation, tests and managed builds.
+export SETUP_REAL_MAKE SETUP_CI_TRACE="$fixture/ci-trace"
+SETUP_REAL_MAKE="$(command -v make)"
+cat > "$fixture/bin/make" <<'MAKE'
+#!/usr/bin/env bash
+set -euo pipefail
+for argument in "$@"; do
+    if [[ "$argument" == -- ]]; then
+        goal="${!#}"
+        printf '%s\n' "$goal" >> "$SETUP_CI_TRACE"
+        [[ "$goal" != "${SETUP_CI_FAILURE:-}" ]] || exit 43
+        exit 0
+    fi
+done
+exec "$SETUP_REAL_MAKE" "$@"
+MAKE
+chmod +x "$fixture/bin/make"
+export VALIDATION_LOG_DIR="$fixture/ci-logs" VALIDATION_FAILURE_LOG_DIR="$fixture/ci-failures"
+: > "$SETUP_CI_TRACE"
+run_make ci > "$fixture/ci.log" 2>&1
+awk '
+    $0 == "clippy" { lint = 1 }
+    $0 == "check" || $0 == "test" { if (!lint) exit 1; covered++ }
+    END { if (covered != 2) exit 1 }
+' "$SETUP_CI_TRACE"
+: > "$SETUP_CI_TRACE"
+if SETUP_CI_FAILURE=clippy run_make ci > "$fixture/clippy-refusal.log" 2>&1; then exit 1; fi
+[[ "$(tail -n 1 "$SETUP_CI_TRACE")" == clippy ]] || exit 1
+if grep -Ex 'check|test|docs-check|msrv-check|package-check|managed-build|test-ic' "$SETUP_CI_TRACE"; then exit 1; fi
+cmp "$root/Cargo.lock" "$fixture/consumer/Cargo.lock"
 complete=true
-printf 'Cold setup, fetch failure and offline selection refusal passed\n'
+printf 'Cold setup, offline refusal and early fail-closed Clippy dispatch passed\n'
