@@ -21,9 +21,12 @@ rustup toolchain install 1.88.0 --profile minimal --no-self-update
 rustup toolchain install 1.91.0 --profile minimal --no-self-update
 rustup target add wasm32-unknown-unknown
 make install-tools
-make deps
 make tools-check
 ```
+
+The ordered application setup fetches the locked workspace cache before deriving
+tool selection from its offline graph. `make deps` remains available for explicit
+cache preparation; `make tools-check` never fetches or installs missing inputs.
 
 Common installers verify pinned downloads and reuse the shared executable store.
 The local product extension selects the Canic CLI matching locked Canic and

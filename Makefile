@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 SHARED_TOOLING_ROOT := $(CURDIR)
-LOCAL_TOOL_INSTALL_TARGETS := install-app-tools
+LOCAL_TOOL_INSTALL_TARGETS := deps install-app-tools
 LOCAL_TOOL_CHECK_TARGETS := app-tools-check
 include make/consumer.mk
 
@@ -18,6 +18,7 @@ GITLEAKS ?= $(CURDIR)/.tools/ci/bin/gitleaks
         release-prepared-check release-files release-commit-check release-committed-check \
         release-tagged-check release-push-check install-validation-tools lint check-secrets
 .PHONY: install-app-tools app-tools-check managed-build test-ic test-blob-worker
+.PHONY: test-tool-setup
 
 help:
 	@echo 'deps / install-tools / tools-check: prepare dependencies and the common toolset'
@@ -88,9 +89,12 @@ package-check publish-dry-run:
 
 ci:
 	+@bash scripts/ci/run-validation-targets.sh --fail-fast \
-		shared-tooling-check tools-check metadata-check runtime-check check-pins \
-		check-doc-links fmt-check check test clippy docs-check msrv-check \
+		shared-tooling-check tools-check test-tool-setup metadata-check runtime-check check-pins \
+		check-doc-links fmt-check clippy check test docs-check msrv-check \
 		package-check check-release-commands test-release test-publish managed-build test-ic
+
+test-tool-setup:
+	bash scripts/ci/test-tool-setup.sh
 
 install-app-tools:
 	+bash scripts/ci/managed-ic.sh install
@@ -137,7 +141,7 @@ install-validation-tools:
 			--sha256 "$$SHARED_TOOLING_GITLEAKS_SHA256_LINUX_X64" --install-dir "$(CURDIR)/.tools/ci/bin"'
 
 lint:
-	"$(SHELLCHECK)" scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh .githooks/pre-commit
+	"$(SHELLCHECK)" scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh scripts/ci/test-tool-setup.sh .githooks/pre-commit
 	"$(ACTIONLINT)" .github/workflows/ci.yml
 
 check-secrets:

@@ -2,6 +2,9 @@
 
 ## [0.3.0]
 
+- Run Clippy before native compilation and tests; a lint failure stops later validation and managed builds.
+
+- Prepare locked workspace dependencies before selecting application tools, and stop on failed offline graph selection ([#9 — Prepare the selected workspace cache before offline app-tool selection](https://github.com/dragginzgame/ic-crates/issues/9)).
 - Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.
 - Accept selected worker executables up to 256 MiB, including the supported debug build.
 - Bind explicit tools, signers and budgets to retained original jobs; refuse redispatch and leave final publication confirmation with the registry.
