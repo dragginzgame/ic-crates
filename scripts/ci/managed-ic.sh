@@ -15,8 +15,9 @@ canic_tool() {
 server_tool() {
     # Select the harness's direct Testkit edge, not every upstream SDK's copy.
     # Cargo owns version resolution; no downstream semver matcher is needed.
-    local version
-    version="$(cargo metadata --offline --locked --format-version 1 | jq -er '
+    local version metadata
+    metadata="$(cargo metadata --offline --locked --format-version 1)" || return "$?"
+    version="$(jq -er '
         . as $metadata
         | [.packages[] | select(.name == "ic-crates-tests")]
         | if length == 1 then .[0].id else error("ambiguous test harness") end
@@ -26,7 +27,7 @@ server_tool() {
         | . as $selected
         | $metadata.packages[] | select(.id == $selected)
         | if .source == "registry+https://github.com/rust-lang/crates.io-index"
-          then .version else error("Testkit tool requires released source") end')"
+          then .version else error("Testkit tool requires released source") end' <<< "$metadata")" || return "$?"
     bash scripts/dev/install-rust-tools.sh --consumer "$root" --package ic-testkit \
         --version "$version" --bin ic-testkit-server --profile release "$@"
 }
