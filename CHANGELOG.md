@@ -2,6 +2,8 @@
 
 ## [0.3.0]
 
+### 📝 Summary
+
 - Prepare the locked workspace cache before application tool selection; preserve Cargo and JSON observation failures before Testkit installation ([#9](https://github.com/dragginzgame/ic-crates/issues/9)).
 - Give release regression fixtures their own draft notes while retaining actual release-note refusal ([#4](https://github.com/dragginzgame/ic-crates/issues/4)).
 - Use current Host APIs for private create-only job writes and descriptor-held, nonblocking spool locks ([#6](https://github.com/dragginzgame/ic-crates/issues/6)).
