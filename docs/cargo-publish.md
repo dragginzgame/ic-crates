@@ -1,5 +1,11 @@
 # Cargo upload bridge
 
+The retained implementation below predates Blob 0.47. The current dependency
+selection fails compilation at its embedded Candid permission type and needs
+coordinated Canic/IC Wire and trusted-registration adoption. Preserve old tools
+and jobs; these setup and recovery instructions do not qualify the new graph.
+See [current dependency evidence](status/current.md).
+
 `ic-crates` receives Cargo's publish API while large archives bypass IC
 message bodies. The registry canister continues to own admission intent and the
 final catalog transaction. Blob Storage continues to own provider transfer,

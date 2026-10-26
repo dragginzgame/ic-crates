@@ -159,8 +159,11 @@ that directory as a public CI artifact. The normal native Cargo fixture separate
 publishes and consumes with unmodified Cargo against a registry substitute.
 
 This is Linux local execution, not deployed service/provider completion or macOS
-qualification. The current IcyDB 0.273 / Blob 0.23 / Canic 0.111 graph has
-incompatible Memory and Timers identities and the standard runtime gate remains closed. Actual prepared
+qualification. The selected IcyDB 0.284 / Blob 0.47 / Canic 0.111 graph has
+incompatible Memory identities and a Candid/IC Wire integration gap. The runtime
+gate and source qualification remain closed. The frozen Blob 0.22.14 tool setup
+above is historical evidence; it is not qualified for the new contracts. Preserve
+those tools and original job evidence for reconciliation. Actual prepared
 certificates, provider transfer, accepted attestation, live-reference/catalog
 commit, gateway consumption and interruption reconciliation remain
 [IC Crates #1](https://github.com/dragginzgame/ic-crates/issues/1) acceptance work.

@@ -2,12 +2,17 @@
 
 ## [0.3.0]
 
+- Select Rust 1.99.1 for development and matching CI checks.
+
+- Select published Blob/contracts 0.47.1, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB 0.284.1; integration remains pending compatible Canic Memory and IC Wire adapters.
+- **Breaking:** require Rust 1.91 for `ic-crates-protocol`, matching the latest Blob contracts dependency; the other packages retain their existing Rust 1.91 floor.
+
 - Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.
 - Accept selected worker executables up to 256 MiB, including the supported debug build.
 - Bind explicit tools, signers and budgets to retained original jobs; refuse redispatch and leave final publication confirmation with the registry.
 - **Breaking:** hash new archive manifests with `Content-Type: application/gzip` to match the upstream SDK. Existing jobs require their original worker and journals; do not rewrite admitted manifests or repeat uncertain transfers.
 - Exercise a clean released Blob tool selection, real SDK manifest agreement across multiple leaves, Chromium refusal and retained signed uncertainty against a local substitute.
-- Select managed server tooling from the test harness's resolved Testkit dependency when upstream SDKs retain another Testkit version. Retain the selected IcyDB 0.273 / Blob 0.23 / Memory 0.36 graph pending compatible Canic adoption; report conflicting runtime identities in validation failures.
+- Select managed server tooling from the test harness's resolved Testkit dependency when upstream SDKs retain another Testkit version. Report conflicting runtime identities in validation failures.
 
 ## [0.2.1] - 2026-10-12
 

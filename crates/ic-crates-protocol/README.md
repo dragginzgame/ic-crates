@@ -33,4 +33,4 @@ provider tree root. Configuration names an HTTPS provider origin, blob service,
 namespace, project and completion verifier. Parsing validates representation;
 the application authenticates delivery and verifies content before publication.
 
-Early pre-1.0 API. Minimum supported Rust: 1.88.0. License: MIT.
+Early pre-1.0 API. Minimum required Rust: 1.91.0 (required by Blob contracts 0.47). License: MIT.

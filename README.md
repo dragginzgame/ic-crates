@@ -7,11 +7,11 @@ optional development inputs.
 
 The foundation includes a controller-operated catalog, Cargo sparse-index and
 blob download routes, and a token-authenticated native `cargo publish` bridge.
-An unmodified Cargo client can publish, resolve, download and build through the
-bridge in local fixture tests. Deployed IC/provider acceptance remains unqualified.
+Earlier local fixture tests used unmodified Cargo to publish, resolve, download
+and build through the bridge. Deployed IC/provider acceptance remains unqualified.
 Earlier compatible-graph PocketIC evidence covers registry/blob installation,
 tenant admission, controller rejection and restoration. The currently selected
-IcyDB 0.273 / Blob 0.23 graph awaits compatible Canic runtime adoption. The native
+IcyDB 0.284 / Blob 0.47 graph awaits compatible Canic adapters. The native
 [Blob worker](docs/blob-worker.md) now has real SDK/Chromium local refusal evidence.
 See [current evidence](docs/status/current.md).
 
@@ -40,12 +40,17 @@ cover dependency alias validation and transitive Cargo feature splitting.
 
 Canic owns lifecycle and the memory allocation pool; IcyDB participates
 synchronously after restoration. Each canister graph has one Memory and Timers
-identity. The selected IcyDB 0.273 / Blob 0.23 graph uses Memory 0.36 and
-Timers 0.21, while Canic 0.111 uses Memory 0.35 and Timers 0.17.
-This pending selection fails `make runtime-check`;
-IC qualification awaits compatible Canic adoption.
+identity. The selected IcyDB 0.284 / Blob 0.47 graph uses Memory 0.51,
+while Canic 0.111 uses Memory 0.35. This selection fails `make runtime-check`;
+IC qualification awaits compatible Canic adoption. Blob 0.47 also uses IC Wire;
+our Candid-based permission boundary currently fails compilation and requires
+coordinated adapter adoption. Retained jobs and installations must not be rewritten.
 
 ## Publication
+
+The sequence below describes the retained implementation before the dependency
+cut. It is not qualified for Blob 0.47: its retired verifier/Candid flow must be
+adapted to current registration contracts through Canic.
 
 1. Install the managed app using matching Canic tooling. Initialize Blob Storage
    with its target-bound `ServiceInstallationInput`, then enroll the registry
@@ -114,7 +119,7 @@ hyphen/underscore variants share one namespace. SemVer build metadata is refused
 
 ## Development and release readiness
 
-Use Rust 1.99.0; no sibling checkout is needed for standard checks.
+Use Rust 1.99.1; no sibling checkout is needed for standard checks.
 
 ```sh
 make install-tools

@@ -23,17 +23,17 @@ canic-host = { version = "0.111.0", default-features = false }
 flate2 = "1.1"
 getrandom = "0.4"
 ic-agent = { version = "0.49.2", default-features = false, features = ["pem", "ring"] }
-ic-blob-storage = "0.25"
-ic-blob-storage-contracts = "0.25"
+ic-blob-storage = "0.47.1"
+ic-blob-storage-contracts = "0.47.1"
 ic-cdk = "0.20.3"
 ic-crates-protocol = { version = "0.2.1", path = "crates/ic-crates-protocol" }
-ic-host-fs = "0.19"
-ic-host-process = "0.19"
-ic-memory = "0.36"
-ic-testkit = "0.46"
-# IcyDB 0.273 / Blob 0.23 select Memory 0.36, and IcyDB selects Timers 0.21.
-# Canic 0.111 still selects Memory 0.35 / Timers 0.17; qualification is pending.
-icydb = { version = "0.274", default-features = false }
+ic-host-fs = "0.68.5"
+ic-host-process = "0.68.5"
+ic-memory = "0.51.3"
+ic-testkit = "0.68.5"
+# Latest maintained components use Memory 0.51; Canic 0.111 still uses
+# Memory 0.35 / Timers 0.17, so composed qualification remains pending.
+icydb = { version = "0.284.1", default-features = false }
 semver = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -80,7 +80,6 @@ check-doc-links:
 		docs/consuming-snapshots.md docs/verification-helpers.md docs/tag-maintenance.md docs/provenance.md
 
 msrv-check:
-	+cargo +1.88.0 check --offline --locked -p ic-crates-protocol --all-targets
 	+cargo +1.91.0 check --offline --locked $(PACKAGES) --all-targets
 
 package-check publish-dry-run:

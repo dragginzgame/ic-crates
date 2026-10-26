@@ -37,7 +37,6 @@ jobs:
         run: rustup toolchain install --profile minimal --component rustfmt --no-self-update
       - name: Prepare advertised minimum compilers
         run: |
-          rustup toolchain install 1.88.0 --profile minimal --no-self-update
           rustup toolchain install 1.91.0 --profile minimal --no-self-update
       - name: Prepare managed Wasm compiler target
         run: rustup target add wasm32-unknown-unknown

@@ -1,23 +1,28 @@
 # Development and qualification
 
-The default Cargo workspace builds from a fresh checkout with released
-dependencies; sibling repositories are not required. `Cargo.lock` fixes the
-selected dependency graph. The user-selected IcyDB 0.273 / Blob 0.23 graph uses
-Memory 0.36 and Timers 0.21; Canic 0.111 uses Memory 0.35 and Timers 0.17. `make runtime-check` rejects that graph
-until compatible Canic adoption. Keep the guard intact and distinguish native
-checks from pending managed IC qualification. Earlier 0.270.3 evidence does not
-qualify this selection.
+Default dependency declarations select published crates and the root lockfile;
+sibling repositories are not build inputs. The latest maintained selections are
+Blob/contracts 0.47.1, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB
+0.284.1. Canic remains at its latest published 0.111.0 family.
+
+This prepared graph is **not buildable yet**: Canic still owns Memory 0.35, while
+new components use Memory 0.51. `make runtime-check` rejects that split. Blob's
+service contracts now use IC Wire and no longer implement Candid for the permission
+embedded in our public protocol. The focused native check fails there too.
+Canic must provide the compatible component/client boundary before qualification;
+do not add a DTO mirror, old/new codec fallback or independent bootstrap here.
+Earlier passing evidence does not qualify this selected graph.
 
 ## Setup
 
-Prepare Rust 1.99.0 for development, Rust 1.88.0 for the public protocol library,
-and Rust 1.91.0 for the public `ic-crates` CLI/library and canister components. Cargo, Git, Bash, Perl, curl,
+Prepare Rust 1.99.1 for development and Rust 1.91.0 for the public packages and
+canister components. Blob contracts 0.47 require the protocol package to move
+from Rust 1.88 to 1.91. Cargo, Git, Bash, Perl, curl,
 tar and xz are system prerequisites. macOS workflows use native Apple Silicon
 or Intel tools. See the reviewed [shared setup guide](local-setup.md).
 
 ```sh
 rustup toolchain install --profile minimal --component rustfmt --no-self-update
-rustup toolchain install 1.88.0 --profile minimal --no-self-update
 rustup toolchain install 1.91.0 --profile minimal --no-self-update
 rustup target add wasm32-unknown-unknown
 make install-tools
@@ -45,7 +50,7 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make managed-build` | Build all five roles through the matching Canic CLI |
 | `make test-ic` | Install registry/blob artifacts and test actual IC admission/restoration |
 | `make install-app-tools`, `make app-tools-check` | Prepare/check Canic and Testkit product tools |
-| `make msrv-check` | Protocol at 1.88 and applications at 1.91 |
+| `make msrv-check` | All packages at the required 1.91 floor (source qualification pending) |
 | `make package-check`, `make publish-dry-run` | Package and compile both public archives together |
 | `make test-publish` | Test publication order, observation guards and interrupted uploads with local substitutes |
 | `make install-validation-tools`, `make lint check-secrets` | Linux shell/workflow lint and Git history secret scan |

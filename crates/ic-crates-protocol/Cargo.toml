@@ -2,7 +2,7 @@
 name = "ic-crates-protocol"
 version.workspace = true
 edition.workspace = true
-rust-version = "1.88.0"
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Cargo sparse-index formats and publication contracts for IC Crates"
