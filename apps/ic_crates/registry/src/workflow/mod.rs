@@ -2,8 +2,8 @@
 
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize};
 
-use ic_blob_storage::ops::service::reads::download::client::ReplicatedDownloadClient;
-use ic_blob_storage::ops::service::uploads::admission::client::ReplicatedUploadAdmissionClient;
+use ic_blob_storage_client::admission::ReplicatedUploadAdmissionClient;
+use ic_blob_storage_client::download::ReplicatedDownloadClient;
 use ic_blob_storage_contracts::dto::upload::admission::{
     UploadAdmissionMutation, UploadAdmissionRequest, UploadAdmissionResponse,
 };
@@ -18,8 +18,8 @@ use ic_blob_storage_contracts::{
     provider::download::request_target,
     upload::completion::{CompletionAuthority, reply},
 };
-use ic_cdk::call::Call;
 use ic_crates_protocol::{IndexEntry, PublishRequest, RegistryError, checksum_hex};
+use ic_platform::cdk::call::Call;
 
 use crate::ops;
 
@@ -28,17 +28,20 @@ fn admission_client(
 ) -> Result<ReplicatedUploadAdmissionClient, RegistryError> {
     let config = ops::configuration()?;
     let upload = permission.upload;
-    if upload.service != config.blob_service
+    if upload.service != config.blob_service.into()
         || upload.namespace != config.namespace
-        || upload.tenant != ic_cdk::api::canister_self()
+        || upload.tenant != ic_platform::cdk::api::canister_self()
     {
         return Err(RegistryError::BlobBinding);
     }
     if upload.bytes > 1024 * 1024 * 1024 {
         return Err(RegistryError::Limit);
     }
-    ic_blob_storage_contracts::upload::admission::parse_binding(config.blob_service, permission)
-        .map_err(|_| RegistryError::BlobBinding)?;
+    ic_blob_storage_contracts::upload::admission::parse_binding(
+        config.blob_service.into(),
+        permission,
+    )
+    .map_err(|_| RegistryError::BlobBinding)?;
     ReplicatedUploadAdmissionClient::new(
         upload.tenant,
         upload.service,
@@ -80,9 +83,9 @@ pub(crate) async fn publish(request: PublishRequest) -> Result<(), RegistryError
     let upload = request.permission.upload;
     let permission = candid::encode_one(request.permission).map_err(|_| RegistryError::Internal)?;
     ops::check_upload(upload.upload, &permission)?;
-    if upload.service != config.blob_service
+    if upload.service != config.blob_service.into()
         || upload.namespace != config.namespace
-        || upload.tenant != ic_cdk::api::canister_self()
+        || upload.tenant != ic_platform::cdk::api::canister_self()
     {
         return Err(RegistryError::BlobBinding);
     }
@@ -95,7 +98,7 @@ pub(crate) async fn publish(request: PublishRequest) -> Result<(), RegistryError
             .map_err(|_| RegistryError::InvalidConfiguration)?;
     let arguments = reply::inspection_request(authority, request.permission)
         .map_err(|_| RegistryError::BlobBinding)?;
-    let response = Call::bounded_wait(config.blob_service, UPLOAD_ATTESTATION_METHOD)
+    let response = Call::bounded_wait(config.blob_service.into(), UPLOAD_ATTESTATION_METHOD)
         .take_raw_args(arguments)
         .await
         .map_err(|_| RegistryError::BlobUnavailable)?;
@@ -109,9 +112,12 @@ pub(crate) async fn publish(request: PublishRequest) -> Result<(), RegistryError
     check_archive_attestation(&attestation, &entry.cksum)?;
 
     // A historical attestation cannot substitute for a currently live reference.
-    let scope =
-        CaffeineDownloadScope::new(config.blob_service, namespace, &config.provider_project)
-            .map_err(|_| RegistryError::InvalidConfiguration)?;
+    let scope = CaffeineDownloadScope::new(
+        config.blob_service.into(),
+        namespace,
+        &config.provider_project,
+    )
+    .map_err(|_| RegistryError::InvalidConfiguration)?;
     let download = DownloadRequest {
         service: upload.service,
         tenant: upload.tenant,
@@ -123,7 +129,7 @@ pub(crate) async fn publish(request: PublishRequest) -> Result<(), RegistryError
     };
     let client = ReplicatedDownloadClient::new(
         upload.tenant,
-        config.blob_service,
+        config.blob_service.into(),
         NonZeroU32::new(30).ok_or(RegistryError::Internal)?,
     )
     .map_err(|_| RegistryError::BlobBinding)?;

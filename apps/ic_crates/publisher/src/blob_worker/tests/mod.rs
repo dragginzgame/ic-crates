@@ -61,9 +61,9 @@ fn real_sdk_preflight_matches_the_original_cargo_job_and_refuses_mutation() {
     config.uploader_identity = temporary.join("uploader.pem");
     config.verifier_identity = temporary.join("verifier.pem");
     config.browser_identity = temporary.join("uploader.json");
-    use ic_agent::Identity as _;
+    use ic_platform::agent::Identity as _;
     let principal = |path: &Path| {
-        ic_agent::identity::BasicIdentity::from_pem(std::fs::read(path).unwrap().as_slice())
+        ic_platform::agent::BasicIdentity::from_pem(std::fs::read(path).unwrap().as_slice())
             .unwrap()
             .sender()
             .unwrap()
@@ -76,7 +76,7 @@ fn real_sdk_preflight_matches_the_original_cargo_job_and_refuses_mutation() {
     config.verifier = principal(&config.verifier_identity);
     let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
     bridge.replica_url = format!("http://{}", server.server_addr());
-    let key = ic_agent::Agent::builder()
+    let key = ic_platform::agent::Agent::builder()
         .with_url("https://icp-api.io")
         .build()
         .unwrap()
@@ -181,7 +181,7 @@ fn real_sdk_preflight_matches_the_original_cargo_job_and_refuses_mutation() {
             ],
         },
     };
-    let key = ic_agent::Agent::builder()
+    let key = ic_platform::agent::Agent::builder()
         .with_url(&bridge.replica_url)
         .build()
         .unwrap()

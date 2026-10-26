@@ -2,11 +2,11 @@
 
 use crate::{Error, Result, config::Configuration, save};
 use candid::{CandidType, Principal};
-use ic_agent::{Agent, Identity, agent::CallResponse, identity::BasicIdentity};
 use ic_blob_storage_contracts::dto::upload::admission::{
     UploadAdmissionMutation, UploadAdmissionRequest,
 };
 use ic_crates_protocol::{HttpRequest, HttpResponse, PublishRequest, RegistryError};
+use ic_platform::agent::{Agent, BasicIdentity, CallResponse, Identity};
 use std::{path::Path, time::Duration};
 
 pub(crate) trait Registry {

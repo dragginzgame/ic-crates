@@ -94,13 +94,21 @@ fn registry_yank(name: String, version: String, yanked: bool) -> Result<(), Regi
 }
 
 /// Queries ask the gateway to upgrade to consensus-backed update execution.
-#[ic_cdk::query]
+#[ic_platform::cdk::query(
+    decode_with = "http::codec::decode_request",
+    encode_with = "http::codec::encode_response"
+)]
+#[candid::candid_method(query)]
 fn http_request(_: http::HttpRequest) -> http::HttpResponse {
     http::upgrade()
 }
 
 /// Read the durable sparse index or redirect to the retained immutable blob URL.
-#[ic_cdk::update]
+#[ic_platform::cdk::update(
+    decode_with = "http::codec::decode_request",
+    encode_with = "http::codec::encode_response"
+)]
+#[candid::candid_method(update)]
 fn http_request_update(request: http::HttpRequest) -> http::HttpResponse {
     icydb::db::with_request_execution(|| http::serve(&request))
 }

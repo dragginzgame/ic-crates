@@ -1,5 +1,7 @@
 //! Cargo HTTP reads. Initial implementation uses the gateway's update upgrade.
 
+pub(crate) mod codec;
+
 pub use ic_crates_protocol::{HttpRequest, HttpResponse};
 use ic_crates_protocol::{RegistryError, index_path};
 
@@ -70,7 +72,7 @@ fn route(path: &str) -> Result<HttpResponse, RegistryError> {
         }
         "/index/config.json" => {
             ops::configuration()?;
-            let base = format!("https://{}.icp0.io", ic_cdk::api::canister_self());
+            let base = format!("https://{}.icp0.io", ic_platform::cdk::api::canister_self());
             // Direct canister reads omit `api`; the host bridge advertises its own API.
             let config = serde_json::json!({"dl":format!("{base}/api/v1/crates/{{crate}}/{{version}}/download")});
             return Ok(response(

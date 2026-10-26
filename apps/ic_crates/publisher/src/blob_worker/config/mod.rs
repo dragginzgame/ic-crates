@@ -1,6 +1,6 @@
 use crate::{Error, Result};
 use candid::Principal;
-use ic_agent::{Identity, identity::BasicIdentity};
+use ic_platform::agent::{BasicIdentity, Identity};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 

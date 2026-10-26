@@ -2,8 +2,9 @@
 
 IC Crates is a controller-operated IC registry and native Cargo bridge. Package
 versions remain 0.2.1, with pending 0.3.0 notes; the user owns release operations.
-Current Git checkpoint is `863d7ca`. This adoption is uncommitted and performs no
-real release, publication, deployment or provider operation.
+Current Git checkpoint is `2899442`, which committed the tooling/coordination
+adoption. The Blob/Platform dependency update remains uncommitted and performs
+no real release, publication, deployment or provider operation.
 
 ## Shared Tooling adoption
 
@@ -17,8 +18,8 @@ pinned source and consolidated/retired the temporary selected-installer snapshot
   `didc ic-wasm icp quill wasm-opt`; the shared catalog selects ICP CLI 1.7.0.
 - Common Rust tools are Cargo sort/derive sort. Product selections retain the
   Canic 0.111 declaration extractor 0.1.6 and select IC Build's metadata editor
-  0.68.5 with `cli`, debug profile and a 4 MiB document budget. Testkit 0.68.5
-  setup/check still select `cli`; Testkit owns PocketIC setup and lifecycle.
+  0.68.5 with `cli`, debug profile and a 4 MiB document budget. Testkit
+  setup/check select `cli`; Testkit owns PocketIC setup and lifecycle.
   [Product pins](../../ci/product-tools.env) are separate from shared catalogs.
 - Production and test/tooling dependencies have separate comment-headed groups.
   Grouped formatting is used by hooks, CI and selected-source release checks.
@@ -36,6 +37,17 @@ pinned source and consolidated/retired the temporary selected-installer snapshot
   Normal releases start fresh; recovery remains explicit through `release-resume`.
   [Release details](../publishing.md) describe the user-owned commands.
 
+## Blob and Platform dependency adoption
+
+The registry now selects published Blob Client/Contracts 0.48.0 and imports
+admission/download clients from the client-only package. Direct service Core is
+removed; Canic 0.111 still owns its older transitive Blob 0.22.16 component.
+Platform 0.6.17 supplies native Agent and registry CDK calls/HTTP entrypoints;
+all workspace direct Agent/CDK declarations and imports are removed. Features
+are selected by the consuming package. Signed-request custody, trust and retries
+retain their existing policy. The external HTTP gateway keeps its Candid records,
+method declarations and original decoder policy through explicit codec hooks.
+
 ## Current blockers and obligations
 
 The maintainer directs shared IC upstream coordination through
@@ -43,9 +55,9 @@ The maintainer directs shared IC upstream coordination through
 the integration contract and supplying-version matrix. Existing owner issues
 retain implementation and consumer acceptance; acknowledgments remain pending.
 
-The unchanged application dependency cut is **not buildable/release-ready**:
+The selected application dependency cut is **not buildable/release-ready**:
 Canic 0.111 selects Memory 0.35.19 while current components select 0.51.3. The
-runtime check still refuses. Blob 0.47's permission DTO is IC Wire, while the
+runtime check still refuses. Blob 0.48's permission DTO is IC Wire, while the
 retained `PublishRequest` embeds it in Candid and fails compilation. Current
 IcyDB/Blob adapter adoption and retirement of old verifier/Candid calls remain
 [IC Crates #1](https://github.com/dragginzgame/ic-crates/issues/1), coordinated with
@@ -53,9 +65,9 @@ IcyDB/Blob adapter adoption and retirement of old verifier/Candid calls remain
 [#613](https://github.com/dragginzgame/canic/issues/613) and
 [#590](https://github.com/dragginzgame/canic/issues/590).
 
-The newly enabled external-IC declaration audit also refuses existing direct
-Candid, Agent and CDK dependencies. They are tracked migration debt under the
-Platform/Wire boundary, not exceptions or a claim of policy compliance. The
+The external-IC declaration audit now refuses only remaining direct Candid
+dependencies in the retained protocol and Canic 0.111 generator integration.
+These remain migration debt, not exceptions or a claim of policy compliance. The
 application-facing owner remains Canic. Test-only graph exclusion passes; that
 is not source compilation or artifact/deployment admission.
 
@@ -67,6 +79,18 @@ under `target/blob-tooling`, `target/blob-worker-tests` and prior validation run
 they do not qualify the new graph. Private fixture keys must not be uploaded.
 
 ## Evidence and resumption
+
+Current dependency-update evidence is under `target/platform-blob-adoption`.
+The standalone API proof reads the actual HTTP records/codecs and uses Platform
+0.6.17 with locked Agent 0.49.2: strict Clippy, two native gateway/signed-request
+cases and Wasm HTTP entrypoint compilation pass. It does not compile the complete
+application or qualify installed Canic composition. Workspace Clippy stops at
+the existing `PublishRequest` Candid trait error before application checking.
+Focused metadata/pins, deployment exclusions, formatting, links, Linux lint and
+secrets pass. Full CI stops at the unchanged Memory split in
+`target/validation-runs/validation.fe4ENp`; its complete log is retained alongside
+the focused and API-proof logs. Incoming locked Host/Testkit 0.68.6 and Wire
+0.7.15 selections are preserved.
 
 Current evidence is retained under `target/shared-tooling-adoption`: exporter
 impact/refresh logs, tool installation/admission, deployment exclusions, external

@@ -15,11 +15,11 @@ include = ["src/**", "README.md", "LICENSE"]
 candid.workspace = true
 flate2.workspace = true
 getrandom.workspace = true
-ic-agent.workspace = true
 ic-blob-storage-contracts = { workspace = true, features = ["provider-json"] }
 ic-crates-protocol.workspace = true
 ic-host-fs.workspace = true
 ic-host-process.workspace = true
+ic-platform = { workspace = true, features = ["agent"] }
 serde.workspace = true
 serde_json.workspace = true
 subtle.workspace = true

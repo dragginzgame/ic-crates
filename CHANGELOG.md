@@ -7,7 +7,8 @@
 
 - Select Rust 1.99.1 for development and matching CI checks.
 
-- Select published Blob/contracts 0.47.1, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB 0.284.1; integration remains pending compatible Canic Memory and IC Wire adapters.
+- Select published Blob Client/Contracts 0.48.0, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB 0.284.1; integration remains pending compatible Canic Memory and IC Wire adapters.
+- Route native Agent and registry CDK calls through Platform 0.6.17, preserving signed requests and the external HTTP gateway's Candid codecs/declarations. Use Blob's client package instead of depending directly on its service implementation.
 - **Breaking:** require Rust 1.91 for `ic-crates-protocol`, matching the latest Blob contracts dependency; the other packages retain their existing Rust 1.91 floor.
 
 - Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.

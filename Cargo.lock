@@ -451,7 +451,7 @@ checksum = "58f3d9c9f3284ad416993e4fce76513972c75c140063293cedbec5411ebbcf43"
 dependencies = [
  "candid",
  "canic",
- "ic-blob-storage 0.22.16",
+ "ic-blob-storage",
  "ic-blob-storage-contracts 0.22.16",
  "ic-cdk",
  "ic-memory 0.35.19",
@@ -576,7 +576,6 @@ dependencies = [
  "candid",
  "canic",
  "canic-blob-service",
- "ic-cdk",
  "ic-memory 0.51.3",
 ]
 
@@ -586,11 +585,11 @@ version = "0.2.1"
 dependencies = [
  "candid",
  "canic",
- "ic-blob-storage 0.47.1",
- "ic-blob-storage-contracts 0.47.1",
- "ic-cdk",
+ "ic-blob-storage-client",
+ "ic-blob-storage-contracts 0.48.0",
  "ic-crates-protocol",
  "ic-memory 0.51.3",
+ "ic-platform",
  "icydb",
  "serde",
  "serde_json",
@@ -1894,7 +1893,6 @@ dependencies = [
  "rand 0.10.3",
  "rangemap",
  "reqwest",
- "ring",
  "sec1",
  "serde",
  "serde_bytes",
@@ -1956,15 +1954,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-blob-storage"
-version = "0.47.1"
+name = "ic-blob-storage-client"
+version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a788bac8cb6835cef09a2b34da4cd4a0e521c2e0290534159c3e361a5653701"
+checksum = "639f6e980e86a48a4e650b615f4126052f54d6a91f530a1591b0486de373175d"
 dependencies = [
- "ic-blob-storage-contracts 0.47.1",
- "ic-memory 0.51.3",
+ "ic-blob-storage-contracts 0.48.0",
  "ic-platform",
- "ic-storage",
  "serde",
  "thiserror 2.0.18",
 ]
@@ -1984,9 +1980,9 @@ dependencies = [
 
 [[package]]
 name = "ic-blob-storage-contracts"
-version = "0.47.1"
+version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0c1fc988d1cef8fd92718d73103cc790999722387d0e322bd109e3d29fdec78"
+checksum = "ab7a292e91ad9d9bcbcbddbb2143cb3883cb819ffbddf2cc79869d8cbb942dc1"
 dependencies = [
  "ic-platform",
  "ic-wire",
@@ -2086,11 +2082,11 @@ dependencies = [
  "candid",
  "flate2",
  "getrandom 0.4.3",
- "ic-agent",
- "ic-blob-storage-contracts 0.47.1",
+ "ic-blob-storage-contracts 0.48.0",
  "ic-crates-protocol",
  "ic-host-fs 0.68.6",
  "ic-host-process 0.68.6",
+ "ic-platform",
  "serde",
  "serde_json",
  "subtle",
@@ -2107,7 +2103,7 @@ name = "ic-crates-protocol"
 version = "0.2.1"
 dependencies = [
  "candid",
- "ic-blob-storage-contracts 0.47.1",
+ "ic-blob-storage-contracts 0.48.0",
  "semver",
  "serde",
  "serde_json",
@@ -2121,7 +2117,7 @@ dependencies = [
  "candid",
  "canic",
  "canic-host",
- "ic-blob-storage-contracts 0.47.1",
+ "ic-blob-storage-contracts 0.48.0",
  "ic-crates-protocol",
  "ic-host-fs 0.68.6",
  "ic-testkit 0.68.6",
@@ -2372,8 +2368,10 @@ dependencies = [
  "candid",
  "crc32fast",
  "data-encoding",
+ "ic-agent",
  "ic-cdk-executor",
  "ic-management-canister-types 0.11.0",
+ "ic-platform-macros",
  "ic-stable-structures",
  "ic0",
  "ic_principal",
@@ -2381,6 +2379,17 @@ dependencies = [
  "pocket-ic",
  "serde",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ic-platform-macros"
+version = "0.6.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37324c84fb851d1ad44f02018776c6ce8bf140bf2098c34206e41d689630cb0f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

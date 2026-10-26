@@ -2,7 +2,7 @@
 
 Default dependency declarations select published crates and the root lockfile;
 sibling repositories are not build inputs. The latest maintained selections are
-Blob/contracts 0.47.1, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB
+Blob Client/Contracts 0.48.0, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB
 0.284.1. Canic remains at its latest published 0.111.0 family.
 
 This prepared graph is **not buildable yet**: Canic still owns Memory 0.35, while
@@ -16,8 +16,8 @@ Earlier passing evidence does not qualify this selected graph.
 ## Setup
 
 Prepare Rust 1.99.1 for development and Rust 1.91.0 for the public packages and
-canister components. Blob contracts 0.47 require the protocol package to move
-from Rust 1.88 to 1.91. Cargo, Git, Bash, Perl, curl,
+canister components. Blob contracts require the protocol's Rust 1.91 floor.
+Cargo, Git, Bash, Perl, curl,
 tar and xz are system prerequisites. macOS workflows use native Apple Silicon
 or Intel tools. See the reviewed [shared setup guide](local-setup.md).
 
@@ -137,8 +137,16 @@ unchanged superseded helpers. Imported payloads remain unedited.
 The root catalog has `# Production dependencies` and `# Tests and tooling only`
 sections, preserved by grouped formatting in development, hooks and release
 checks. Normal/build graph exclusions are enforced before managed builds.
-The common external-IC audit separately reports existing direct Candid/Agent/CDK
-uses; labels or a passing test-only exclusion do not establish Platform/Wire
+Native Agent imports use Platform's optional `agent` feature. Registry CDK calls
+and HTTP entrypoints use its `cdk` feature; external HTTP gateway Candid codecs
+and method declarations retain the previous representation and decoding policy.
+Agent trust, signing, deadlines, saved requests and retry choices remain local.
+The registry imports admission/download clients from Blob's client-only package;
+the dedicated service component remains owned by Canic's selected adapter.
+
+The common external-IC audit still reports direct Candid uses in the retained
+protocol and Canic 0.111 generator integration. CDK/Agent declarations are removed;
+labels or a passing test-only exclusion do not establish complete Platform/Wire
 migration, a successful build or deployment readiness.
 
 Review the [maintenance catalog](../tasks/README.md) for dependency security,

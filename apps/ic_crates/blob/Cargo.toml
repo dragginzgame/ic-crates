@@ -20,7 +20,6 @@ doctest = false
 candid.workspace = true
 canic = { workspace = true, features = [] }
 canic-blob-service.workspace = true
-ic-cdk.workspace = true
 ic-memory.workspace = true
 
 [build-dependencies]

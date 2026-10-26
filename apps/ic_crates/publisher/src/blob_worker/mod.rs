@@ -205,7 +205,7 @@ fn prepare(configuration: &Path, job: &Path, output: &Path) -> Result<Prepared> 
     if identity.bytes != intent.bytes || identity.sha256.to_string() != intent.index.cksum {
         return Err(Error::bad("Original archive bytes or checksum differ."));
     }
-    let agent = ic_agent::Agent::builder()
+    let agent = ic_platform::agent::Agent::builder()
         .with_url(&bridge.replica_url)
         .build()
         .map_err(|_| Error::bad("Invalid original replica."))?;

@@ -11,7 +11,7 @@ Earlier local fixture tests used unmodified Cargo to publish, resolve, download
 and build through the bridge. Deployed IC/provider acceptance remains unqualified.
 Earlier compatible-graph PocketIC evidence covers registry/blob installation,
 tenant admission, controller rejection and restoration. The currently selected
-IcyDB 0.284 / Blob 0.47 graph awaits compatible Canic adapters. The native
+IcyDB 0.284 / Blob 0.48 graph awaits compatible Canic adapters. The native
 [Blob worker](docs/blob-worker.md) now has real SDK/Chromium local refusal evidence.
 See [current evidence](docs/status/current.md).
 
@@ -40,16 +40,16 @@ cover dependency alias validation and transitive Cargo feature splitting.
 
 Canic owns lifecycle and the memory allocation pool; IcyDB participates
 synchronously after restoration. Each canister graph has one Memory and Timers
-identity. The selected IcyDB 0.284 / Blob 0.47 graph uses Memory 0.51,
+identity. The selected IcyDB 0.284 / Blob 0.48 graph uses Memory 0.51,
 while Canic 0.111 uses Memory 0.35. This selection fails `make runtime-check`;
-IC qualification awaits compatible Canic adoption. Blob 0.47 also uses IC Wire;
+IC qualification awaits compatible Canic adoption. Blob 0.48 also uses IC Wire;
 our Candid-based permission boundary currently fails compilation and requires
 coordinated adapter adoption. Retained jobs and installations must not be rewritten.
 
 ## Publication
 
 The sequence below describes the retained implementation before the dependency
-cut. It is not qualified for Blob 0.47: its retired verifier/Candid flow must be
+cut. It is not qualified for Blob 0.48: its retired verifier/Candid flow must be
 adapted to current registration contracts through Canic.
 
 1. Install the managed app using matching Canic tooling. Initialize Blob Storage
