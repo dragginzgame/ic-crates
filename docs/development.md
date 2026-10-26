@@ -2,8 +2,9 @@
 
 Default dependency declarations select published crates and the root lockfile;
 sibling repositories are not build inputs. The latest maintained selections are
-Blob Client/Contracts 0.48.0, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB
-0.284.1. Canic remains at its latest published 0.111.0 family.
+Blob Client/Contracts 0.49.0 and Platform 0.6.18. The preserved lock selects
+Host FS/Process and Testkit 0.68.7, Memory 0.51.3 and IcyDB 0.284.3. Canic remains
+at 0.111.0. These selections were already present before the tooling refresh.
 
 This prepared graph is **not buildable yet**: Canic still owns Memory 0.35, while
 new components use Memory 0.51. `make runtime-check` rejects that split. Blob's
@@ -11,7 +12,11 @@ service contracts now use IC Wire and no longer implement Candid for the permiss
 embedded in our public protocol. The focused native check fails there too.
 Canic must provide the compatible component/client boundary before qualification;
 do not add a DTO mirror, old/new codec fallback or independent bootstrap here.
-Earlier passing evidence does not qualify this selected graph.
+Blob 0.49 keeps the 0.48 Rust interfaces and stored formats. Its browser assets
+now require published `@tokostudios/ic-platform@0.1.0` and the owner's SDK 6.1.1
+override; the historical worker recipe is not qualified for these assets. See
+[worker qualification](blob-worker.md) before selecting tools. Earlier passing
+evidence does not qualify this selected graph.
 
 ## Setup
 
@@ -26,9 +31,13 @@ rustup toolchain install --profile minimal --component rustfmt --no-self-update
 rustup toolchain install 1.91.0 --profile minimal --no-self-update
 rustup target add wasm32-unknown-unknown
 make install-tools
-make deps
 make tools-check
 ```
+
+Ordered setup prepares the locked project cache before application-tool selection,
+including under parallel Make. Cargo/JSON observation failures stop before Testkit
+installation. `make deps` remains an explicit cache-preparation command;
+`make tools-check` never fetches or installs missing inputs.
 
 Common installers verify pinned downloads and reuse the shared executable store.
 The shared default set is host tools plus Cargo sort/derive sort. This product
@@ -51,13 +60,14 @@ hook only when the shared hook and its companions are committed/tracked.
 
 | Command | Scope |
 | --- | --- |
-| `make check`, `make test`, `make clippy`, `make docs-check` | Focused native Rust checks |
+| `make check`, `make test`, `make clippy`, `make docs-check` | Aggregate native Rust checks across the declared package set |
 | `make fmt`, `make fmt-check` | Shared Cargo sorting and Rust formatting |
 | `make ci` | Complete native and managed IC delivery gate with retained failure logs |
 | `make test-blob-worker` | Opt-in real SDK/Chromium local refusal test with explicit tool configuration ([setup](blob-worker.md)) |
 | `make managed-build` | Build all five roles through the matching Canic CLI |
 | `make test-ic` | Install registry/blob artifacts and test actual IC admission/restoration |
 | `make install-app-tools`, `make app-tools-check` | Prepare/check Canic and Testkit product tools |
+| `make test-tool-setup` | Isolated cold-cache, failed-observation and early Clippy-order controls |
 | `make msrv-check` | All packages at the required 1.91 floor (source qualification pending) |
 | `make package-check`, `make publish-dry-run` | Package and compile both public archives together |
 | `make test-publish` | Test publication order, observation guards and interrupted uploads with local substitutes |
@@ -67,7 +77,15 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make external-ic-check` | Direct external IC dependency audit; currently refuses existing Platform/Wire migration debt |
 | `make tasks`, `make cloc` | Shared maintenance catalog and Rust LOC |
 
-Run relevant focused targets while coding. The maintainer's local overlay requires
+Select the smallest package or test that answers the current question. For example,
+`cargo test --offline --locked -p ic-crates-protocol index::tests` selects the
+protocol's index tests, while `cargo clippy --offline --locked -p ic-crates-protocol
+--all-targets --no-deps -- -D warnings` checks that package's lint contract.
+These checks currently encounter the retained Candid/Wire incompatibility above.
+The Make aggregates are broader checks; finish a coherent edit batch before
+running the selected checks, and reuse evidence for unchanged inputs under the
+[shared validation policy](../DRAGGINZGAME.md#validation-and-evidence).
+The maintainer's local overlay requires
 `make ci` and Linux `make lint check-secrets` before delivery. The complete gate
 runs Clippy before product builds/tests. No standard validation command publishes,
 releases or deploys.
@@ -129,10 +147,19 @@ graph; do not combine framework versions or bypass compiler warnings.
 
 ## Shared Tooling
 
-The [snapshot manifest](../.shared-tooling.snapshot) records Shared Tooling 0.26.18
-at `37652c087fff16f55f83d18d27ba17c83f34021c`. The canonical exporter selected a
-clean detached copy, consolidated the temporary installer snapshot and retired
-unchanged superseded helpers. Imported payloads remain unedited.
+The [snapshot manifest](../.shared-tooling.snapshot) records Shared Tooling 0.26.20
+at `a7f85d45d4212d4c39225f58597580560a333550`. The canonical exporter selected a
+clean detached copy and verified all 116 payloads. Imported payloads remain
+unedited. The compact baseline links task-specific engineering contracts;
+detailed change metrics and symbol inventories are opt-in. Release notes may
+retain archived `Draft` headings below the canonical previous release, while
+active draft conflicts still refuse.
+
+The npm SDK boundary is independent of Rust Platform adoption. The historical
+Blob adapter generator still emits a direct SDK Core import; migrating that
+recipe and qualifying current browser/provider assets remain part of
+[#12](https://github.com/dragginzgame/ic-crates/issues/12). This snapshot refresh
+does not qualify those retained tools or add an npm toolchain to this workspace.
 
 The root catalog has `# Production dependencies` and `# Tests and tooling only`
 sections, preserved by grouped formatting in development, hooks and release

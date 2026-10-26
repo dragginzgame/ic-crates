@@ -76,21 +76,45 @@ git -C "$fixture/repo" config tag.gpgsign false
 git init --bare -q "$fixture/remote.git"
 git -C "$fixture/repo" remote add origin "$fixture/remote.git"
 cd "$fixture/repo"
+# The disposable fixture owns its release draft even on finalized-only source.
+previous="$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)"
+kind='patch'
+candidate="$(bash scripts/ci/next-release-version.sh "$previous" "$kind")"
+printf '## [%s] - 2020-01-01\n\n- Previous fixture release.\n\n## [Draft]\n\n- Archived fixture wording.  \t' \
+    "$previous" > "$fixture/historical-notes"
+printf '# Changelog\n\n## [%s]\n\n- Exercise isolated release recovery.\n\n' \
+    "$candidate" > CHANGELOG.md
+cat "$fixture/historical-notes" >> CHANGELOG.md
 # This index is disposable. Never stage or mutate the consumer checkout's index.
 git add .
 git commit -qm 'Fixture source'
 git push -q -u origin main
 source="$(git rev-parse HEAD)"
-previous="$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)"
-candidate="$(awk '/^## \[[0-9]+\.[0-9]+\.[0-9]+\]$/ { gsub(/^## \[|\]$/, ""); print; exit }' CHANGELOG.md)"
-kind=''
-for component in patch minor major; do
-    if [[ "$candidate" == "$(bash scripts/ci/next-release-version.sh "$previous" "$component")" ]]; then kind="$component"; break; fi
-done
-[[ -n "$kind" ]] || { echo 'Fixture requires one valid next-version draft.' >&2; exit 1; }
 date="$(date -u +%Y-%m-%d)"
 export RELEASE_SOURCE="$source" RELEASE_PREVIOUS="$previous" RELEASE_VERSION="$candidate" RELEASE_DATE="$date"
 cp Cargo.lock "$fixture/original.lock"
+
+# Fixture-owned notes do not weaken admission of an actual release's notes.
+cp CHANGELOG.md "$fixture/valid-notes"
+printf '# Changelog\n' > CHANGELOG.md
+if bash scripts/release/release.sh preflight > "$fixture/missing-notes-refusal.log" 2>&1; then
+    echo 'Preflight accepted missing actual release notes.' >&2; exit 1
+fi
+[[ "$(git rev-parse HEAD)" == "$source" ]]
+[[ "$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)" == "$previous" ]]
+cmp "$fixture/original.lock" Cargo.lock
+cp "$fixture/valid-notes" CHANGELOG.md
+
+# An active unnumbered draft still refuses before any release effect.
+printf '# Changelog\n\n## [%s]\n\n## [Draft]\n\n' "$candidate" > CHANGELOG.md
+cat "$fixture/historical-notes" >> CHANGELOG.md
+if bash scripts/release/release.sh preflight > "$fixture/active-draft-refusal.log" 2>&1; then
+    echo 'Preflight accepted an active unnumbered draft.' >&2; exit 1
+fi
+[[ "$(git rev-parse HEAD)" == "$source" ]]
+[[ "$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)" == "$previous" ]]
+cmp "$fixture/original.lock" Cargo.lock
+cp "$fixture/valid-notes" CHANGELOG.md
 
 printf 'unrelated\n' > unrelated.txt
 git add unrelated.txt
@@ -133,6 +157,10 @@ commit="$(git rev-parse HEAD)"
 [[ "$commit" != "$source" ]]
 [[ "$(git log -1 --format=%P)" == "$source" ]]
 [[ "$(bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml)" == "$candidate" ]]
+printf '# Changelog\n\n## [%s] - %s\n\n- Exercise isolated release recovery.\n\n' \
+    "$candidate" "$date" > "$fixture/expected-notes"
+cat "$fixture/historical-notes" >> "$fixture/expected-notes"
+cmp "$fixture/expected-notes" CHANGELOG.md
 bash scripts/ci/check-release-tag.sh "$commit" "$candidate"
 [[ "$(git --git-dir="$fixture/remote.git" rev-parse refs/heads/main)" == "$commit" ]]
 [[ "$(git --git-dir="$fixture/remote.git" rev-parse "refs/tags/v$candidate^{commit}")" == "$commit" ]]
@@ -160,4 +188,4 @@ if perl scripts/release/metadata.pl check "$source" "$candidate" "$date" > "$fix
 fi
 git restore Cargo.toml
 complete=true
-echo 'Release fixture passed: shared metadata/editor, grouped selected-source checks, gate/receipt recovery and exact local delivery/replay.'
+echo 'Release fixture passed: historical-note preservation, active-draft refusal, shared metadata/editor, grouped selected-source checks, gate/receipt recovery and exact local delivery/replay.'

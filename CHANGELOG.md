@@ -2,13 +2,18 @@
 
 ## [0.3.0]
 
-- Adopt Shared Tooling 0.26.18 as one verified snapshot, including feature-aware Testkit setup, explicit IC tools and grouped production/test dependency declarations.
+- Prepare the locked workspace cache before application tool selection; preserve Cargo and JSON observation failures before Testkit installation ([#9](https://github.com/dragginzgame/ic-crates/issues/9)).
+- Give release regression fixtures their own draft notes while retaining actual release-note refusal ([#4](https://github.com/dragginzgame/ic-crates/issues/4)).
+- Use current Host APIs for private create-only job writes and descriptor-held, nonblocking spool locks ([#6](https://github.com/dragginzgame/ic-crates/issues/6)).
+
+- Adopt Shared Tooling 0.26.20 as one verified snapshot, including feature-aware Testkit setup, explicit IC tools and grouped production/test dependency declarations. Use its compact baseline and task-specific contracts; detailed change accounting is opt-in.
+- Preserve archived draft labels in historical release notes while refusing active draft conflicts during release preparation.
 - Use the prepared IC Build editor and shared transaction for release metadata; retain exact source receipts, grouped committed-source checks and explicit release recovery.
 
 - Select Rust 1.99.1 for development and matching CI checks.
 
-- Select published Blob Client/Contracts 0.48.0, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB 0.284.1; integration remains pending compatible Canic Memory and IC Wire adapters.
-- Route native Agent and registry CDK calls through Platform 0.6.17, preserving signed requests and the external HTTP gateway's Candid codecs/declarations. Use Blob's client package instead of depending directly on its service implementation.
+- Select published Blob Client/Contracts 0.49.0, Host FS/Process and Testkit 0.68.7, Memory 0.51.3 and IcyDB 0.284.3; integration remains pending compatible Canic Memory and IC Wire adapters.
+- Route native Agent and registry CDK calls through Platform 0.6.18, preserving signed requests and the external HTTP gateway's Candid codecs/declarations. Use Blob's client package instead of depending directly on its service implementation.
 - **Breaking:** require Rust 1.91 for `ic-crates-protocol`, matching the latest Blob contracts dependency; the other packages retain their existing Rust 1.91 floor.
 
 - Add `ic-crates-blob-worker` and an offline preflight command composing the maintained Blob CLI, SDK/browser journal and verifier for an already-admitted registry tenant upload.

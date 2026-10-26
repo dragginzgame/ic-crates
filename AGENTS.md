@@ -1,8 +1,8 @@
 # IC Crates contributor instructions
 
 Read [the current handoff](docs/status/current.md), then apply the reviewed
-[Dragginzgame baseline](DRAGGINZGAME.md). Shared Tooling 0.26.18 revision
-`37652c087fff16f55f83d18d27ba17c83f34021c` is recorded in
+[Dragginzgame baseline](DRAGGINZGAME.md). Shared Tooling 0.26.20 revision
+`a7f85d45d4212d4c39225f58597580560a333550` is recorded in
 [.shared-tooling.snapshot](.shared-tooling.snapshot). This file is the local overlay.
 
 - Work in this repository; sibling checkouts are read-only unless separately authorized.
@@ -26,8 +26,8 @@ Read [the current handoff](docs/status/current.md), then apply the reviewed
 - The native bridge uses IC Host FS for durable files/locks and Blob Storage's
   manifest builder. Its selected provider worker owns SDK/browser/verifier journals.
   Never replay that worker from a Cargo retry or infer completion from its exit code.
-- Run focused development checks; the maintainer requires complete `make ci`
-  and Linux `make lint check-secrets` before delivery. Support Linux x86-64 and
+- Follow the baseline's focused validation cadence; the maintainer requires
+  complete `make ci` and Linux `make lint check-secrets` before delivery. Support Linux x86-64 and
   macOS 15 on Intel and Apple Silicon; Linux evidence does not qualify macOS.
 - Check active builds before editing/building. Preserve source, tools, artifacts,
   failure evidence and unrelated changes. Readiness does not authorize release targets.

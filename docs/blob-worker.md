@@ -159,11 +159,15 @@ that directory as a public CI artifact. The normal native Cargo fixture separate
 publishes and consumes with unmodified Cargo against a registry substitute.
 
 This is Linux local execution, not deployed service/provider completion or macOS
-qualification. The selected IcyDB 0.284 / Blob 0.47 / Canic 0.111 graph has
+qualification. The selected IcyDB 0.284 / Blob 0.49 / Canic 0.111 graph has
 incompatible Memory identities and a Candid/IC Wire integration gap. The runtime
 gate and source qualification remain closed. The frozen Blob 0.22.14 tool setup
 above is historical evidence; it is not qualified for the new contracts. Preserve
-those tools and original job evidence for reconciliation. Actual prepared
+those tools and original job evidence for reconciliation. Blob 0.49 browser assets
+use published `@tokostudios/ic-platform@0.1.0`, its checked identity restoration
+and the retained Caffeine SDK 6.1.1 override. Rebuilding the historical adapter
+against those assets does not port its retired Candid/verifier flow. Do not point
+retained jobs at a new CLI, SDK bundle or browser profile. Actual prepared
 certificates, provider transfer, accepted attestation, live-reference/catalog
 commit, gateway consumption and interruption reconciliation remain
 [IC Crates #1](https://github.com/dragginzgame/ic-crates/issues/1) acceptance work.

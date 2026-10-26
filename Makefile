@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 SHARED_TOOLING_ROOT := $(CURDIR)
 IC_TOOLS := didc ic-wasm icp quill wasm-opt
-LOCAL_TOOL_INSTALL_TARGETS := install-ic-tools install-app-tools
+LOCAL_TOOL_INSTALL_TARGETS := install-ic-tools deps install-app-tools
 LOCAL_TOOL_CHECK_TARGETS := ic-tools-check app-tools-check
 include make/consumer.mk
 
@@ -19,11 +19,13 @@ GITLEAKS ?= $(CURDIR)/.tools/ci/bin/gitleaks
         release-prepared-check release-files release-commit-check release-committed-check \
         release-tagged-check release-push-check install-validation-tools lint check-secrets
 .PHONY: install-app-tools app-tools-check managed-build test-ic test-blob-worker deployment-deps-check external-ic-check
+.PHONY: test-tool-setup
 
 help:
 	@echo 'deps / install-tools / tools-check: prepare dependencies and the common toolset'
 	@echo 'fmt / fmt-check / install-hooks: shared formatting and pre-commit activation'
-	@echo 'check / test / clippy / docs-check: focused Rust development checks'
+	@echo 'check / test / clippy / docs-check: aggregate native Rust checks'
+	@echo 'Focused checks: select a package/test with Cargo; see docs/development.md'
 	@echo 'managed-build / test-ic: Canic artifacts and actual registry/blob PocketIC qualification'
 	@echo 'ci: complete native and managed IC gate with retained validation logs'
 	@echo 'package-check / publish-dry-run: verify protocol and CLI archives before publication'
@@ -91,7 +93,7 @@ check-doc-links:
 		docs/local-setup.md docs/ic-tools.md docs/make-interface.md docs/releases.md \
 		docs/consuming-snapshots.md docs/verification-helpers.md docs/tag-maintenance.md docs/provenance.md \
 		docs/cargo-graph-checks.md docs/cargo-publication.md docs/rust-toolchains.md \
-		docs/tool-catalog-bindings.md docs/ci-change-selection.md
+		docs/tool-catalog-bindings.md docs/ci-change-selection.md docs/node-tools.md
 
 msrv-check:
 	+cargo +1.91.0 check --offline --locked $(PACKAGES) --all-targets
@@ -101,9 +103,12 @@ package-check publish-dry-run:
 
 ci:
 	+@bash scripts/ci/run-validation-targets.sh --fail-fast \
-		shared-tooling-check tools-check metadata-check runtime-check check-pins \
+		shared-tooling-check tools-check test-tool-setup metadata-check runtime-check check-pins \
 		deployment-deps-check external-ic-check check-doc-links fmt-check clippy check test docs-check msrv-check \
 		package-check check-release-commands test-release test-publish managed-build test-ic
+
+test-tool-setup:
+	bash scripts/ci/test-tool-setup.sh
 
 install-app-tools:
 	+bash scripts/ci/managed-ic.sh install
@@ -145,7 +150,7 @@ install-validation-tools:
 	@bash scripts/ci/install-ci-tool.sh gitleaks --install-dir "$(CURDIR)/.tools/ci/bin"
 
 lint:
-	"$(SHELLCHECK)" --external-sources scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh .githooks/pre-commit
+	"$(SHELLCHECK)" --external-sources scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh scripts/ci/test-tool-setup.sh .githooks/pre-commit
 	"$(ACTIONLINT)" .github/workflows/ci.yml
 
 check-secrets:

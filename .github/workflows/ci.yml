@@ -42,8 +42,6 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Prepare complete common toolset
         run: make install-tools 2>&1 | tee "$TMPDIR/tools-install.log"
-      - name: Prepare locked dependency cache
-        run: make deps
       - name: Run complete delivery gate
         run: make ci
       - name: Retain failed tool setup evidence

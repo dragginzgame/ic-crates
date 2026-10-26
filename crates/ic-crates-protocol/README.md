@@ -36,4 +36,4 @@ the application authenticates delivery and verifies content before publication.
 Current dependency adoption is pending compatible Canic/IC Wire integration;
 see the [qualification status](https://github.com/dragginzgame/ic-crates/blob/main/docs/status/current.md).
 
-Early pre-1.0 API. Minimum required Rust: 1.91.0 (required by Blob contracts 0.48). License: MIT.
+Early pre-1.0 API. Minimum required Rust: 1.91.0 (required by Blob contracts 0.49). License: MIT.

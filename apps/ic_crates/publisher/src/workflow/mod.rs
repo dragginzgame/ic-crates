@@ -36,12 +36,20 @@ pub(crate) struct Publisher<B> {
     pub root_digest: String,
 }
 
+// The caller retains this descriptor throughout permission, worker and commit work.
+pub(super) fn lock_spool(path: &Path) -> Result<fs::File> {
+    ic_host_fs::durable::open_regular_lock_file_with_parents(path)
+        .map_err(std::io::Error::from)
+        .and_then(|file| {
+            ic_host_fs::durable::try_lock_exclusive(&file)?;
+            Ok(file)
+        })
+        .map_err(|_| Error::unavailable("Upload spool is busy or unavailable."))
+}
+
 impl<B: Registry> Publisher<B> {
     pub fn publish(&self, mut upload: Upload) -> Result<()> {
-        let _lock = ic_host_fs::durable::try_lock_regular_file_with_parents(
-            &self.config.spool.join("owner.lock"),
-        )
-        .map_err(|_| Error::unavailable("Upload spool is busy or unavailable."))?;
+        let _lock = lock_spool(&self.config.spool.join("owner.lock"))?;
         let job = self.config.spool.join(format!(
             "{}@{}",
             canonical_name(&upload.index.name).map_err(|_| Error::bad("Invalid crate name."))?,

@@ -38,7 +38,16 @@ impl Error {
 type Result<T> = std::result::Result<T, Error>;
 
 fn save(path: &Path, bytes: &[u8]) -> Result<()> {
-    ic_host_fs::durable::create_private_bytes_with_parents(path, bytes).map_err(|_| {
+    use ic_host_fs::durable::{PublicationMode, WriteOptions, write_bytes};
+    write_bytes(
+        path,
+        WriteOptions {
+            mode: PublicationMode::CreateNew,
+            permissions: 0o600,
+        },
+        bytes,
+    )
+    .map_err(|_| {
         Error::unavailable("Durable job write failed; preserve and inspect original evidence.")
     })
 }
@@ -93,3 +102,6 @@ fn start(path: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod durable_tests;
