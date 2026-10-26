@@ -31,11 +31,19 @@ make tools-check
 ```
 
 Common installers verify pinned downloads and reuse the shared executable store.
-The local product extension selects the Canic CLI matching locked Canic and
-the server CLI from the test harness's resolved direct IC Testkit dependency
-through the common Rust installer, even if an upstream SDK retains another version.
-Testkit owns PocketIC setup, compatibility checks, launch and cleanup; this
-repository carries no server download pin or alternate launcher.
+The shared default set is host tools plus Cargo sort/derive sort. This product
+explicitly selects `didc ic-wasm icp quill wasm-opt` through `IC_TOOLS` and the
+ordered local setup/check target lists. CI's compact failure evidence uses that
+same selection. ICP CLI now uses the snapshot's reviewed 1.7.0 catalog entry.
+
+The local product setup selects matching Canic and the harness's resolved direct
+Testkit version. Testkit installation and admission both request `--features cli`;
+Testkit alone owns PocketIC setup and lifecycle. Canic 0.111's legacy declaration
+extractor is now an explicit product tool at 0.1.6. The IC Build release editor
+is selected at 0.68.5 with `cli`, debug profile and a 4 MiB document allowance.
+[Product pins](../ci/product-tools.env) stay separate from shared default catalogs.
+The release adapter obtains the admitted editor path automatically; operators
+need not export it. There is one main snapshot and no auxiliary installer copy.
 `make install-hooks` activates the reviewed formatting
 hook only when the shared hook and its companions are committed/tracked.
 
@@ -55,10 +63,14 @@ hook only when the shared hook and its companions are committed/tracked.
 | `make test-publish` | Test publication order, observation guards and interrupted uploads with local substitutes |
 | `make install-validation-tools`, `make lint check-secrets` | Linux shell/workflow lint and Git history secret scan |
 | `make shared-tooling-check`, `make check-pins` | Snapshot integrity and declared dependency policy |
+| `make deployment-deps-check` | Normal/build graph exclusion of test-only packages for both Wasm roles and the native bridge |
+| `make external-ic-check` | Direct external IC dependency audit; currently refuses existing Platform/Wire migration debt |
 | `make tasks`, `make cloc` | Shared maintenance catalog and Rust LOC |
 
-Run relevant narrow checks while coding; complete `make ci` and Linux lint/security
-before delivery. No standard validation command publishes, releases or deploys.
+Run relevant focused targets while coding. The maintainer's local overlay requires
+`make ci` and Linux `make lint check-secrets` before delivery. The complete gate
+runs Clippy before product builds/tests. No standard validation command publishes,
+releases or deploys.
 Package checks use Cargo's normal registry handling to verify the CLI against
 the newly staged protocol archive. They preserve `--locked`; explicitly offline
 callers can fail at Cargo's staged-registry unpack step even with external caches
@@ -117,10 +129,17 @@ graph; do not combine framework versions or bypass compiler warnings.
 
 ## Shared Tooling
 
-The [snapshot manifest](../.shared-tooling.snapshot) records Shared Tooling 0.9.5
-at `b1630b89482cc6071fc928a86962d79c9c11fdb7`. The exporter selected a clean copy
-of that commit, preserving the sibling's unrelated work. Vendored files remain
-unchanged; local commands and release metadata belong to this repository.
+The [snapshot manifest](../.shared-tooling.snapshot) records Shared Tooling 0.26.18
+at `37652c087fff16f55f83d18d27ba17c83f34021c`. The canonical exporter selected a
+clean detached copy, consolidated the temporary installer snapshot and retired
+unchanged superseded helpers. Imported payloads remain unedited.
+
+The root catalog has `# Production dependencies` and `# Tests and tooling only`
+sections, preserved by grouped formatting in development, hooks and release
+checks. Normal/build graph exclusions are enforced before managed builds.
+The common external-IC audit separately reports existing direct Candid/Agent/CDK
+uses; labels or a passing test-only exclusion do not establish Platform/Wire
+migration, a successful build or deployment readiness.
 
 Review the [maintenance catalog](../tasks/README.md) for dependency security,
 toolchain/MSRV checks, snapshot drift, README freshness and unused dependencies.

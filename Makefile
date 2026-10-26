@@ -1,7 +1,8 @@
 .DEFAULT_GOAL := help
 SHARED_TOOLING_ROOT := $(CURDIR)
-LOCAL_TOOL_INSTALL_TARGETS := install-app-tools
-LOCAL_TOOL_CHECK_TARGETS := app-tools-check
+IC_TOOLS := didc ic-wasm icp quill wasm-opt
+LOCAL_TOOL_INSTALL_TARGETS := install-ic-tools install-app-tools
+LOCAL_TOOL_CHECK_TARGETS := ic-tools-check app-tools-check
 include make/consumer.mk
 
 PACKAGES = -p ic-crates-protocol -p canister_ic_crates_registry -p canister_ic_crates_blob -p ic-crates -p ic-crates-tests
@@ -17,7 +18,7 @@ GITLEAKS ?= $(CURDIR)/.tools/ci/bin/gitleaks
         release-version release-preflight release-verify release-prepare-version \
         release-prepared-check release-files release-commit-check release-committed-check \
         release-tagged-check release-push-check install-validation-tools lint check-secrets
-.PHONY: install-app-tools app-tools-check managed-build test-ic test-blob-worker
+.PHONY: install-app-tools app-tools-check managed-build test-ic test-blob-worker deployment-deps-check external-ic-check
 
 help:
 	@echo 'deps / install-tools / tools-check: prepare dependencies and the common toolset'
@@ -69,6 +70,17 @@ docs-check:
 check-pins:
 	+bash scripts/ci/check-dependency-pins.sh --consumer "$(CURDIR)" --cargo-inheritance
 
+deployment-deps-check:
+	+perl scripts/ci/check-cargo-graph.pl --consumer "$(CURDIR)" \
+		--package canister_ic_crates_registry --package canister_ic_crates_blob \
+		--target wasm32-unknown-unknown --forbid canic-host --forbid ic-testkit --explain
+	+@host="$$(rustc -vV | sed -n 's/^host: //p')"; \
+		perl scripts/ci/check-cargo-graph.pl --consumer "$(CURDIR)" --package ic-crates \
+		--target "$$host" --forbid canic-host --forbid ic-testkit --explain
+
+external-ic-check:
+	+bash scripts/ci/check-cargo-dependency-boundaries.sh --consumer "$(CURDIR)" --external-ic
+
 check-doc-links:
 	perl scripts/ci/check-documentation-links.pl --root "$(CURDIR)" \
 		README.md AGENTS.md CHANGELOG.md docs/status/current.md docs/development.md \
@@ -77,7 +89,9 @@ check-doc-links:
 		apps/ic_crates/publisher/README.md DRAGGINZGAME.md \
 		rules/*.md tasks/*.md audits/*.md docs/principles/*.md docs/supported-hosts.md \
 		docs/local-setup.md docs/ic-tools.md docs/make-interface.md docs/releases.md \
-		docs/consuming-snapshots.md docs/verification-helpers.md docs/tag-maintenance.md docs/provenance.md
+		docs/consuming-snapshots.md docs/verification-helpers.md docs/tag-maintenance.md docs/provenance.md \
+		docs/cargo-graph-checks.md docs/cargo-publication.md docs/rust-toolchains.md \
+		docs/tool-catalog-bindings.md docs/ci-change-selection.md
 
 msrv-check:
 	+cargo +1.91.0 check --offline --locked $(PACKAGES) --all-targets
@@ -88,7 +102,7 @@ package-check publish-dry-run:
 ci:
 	+@bash scripts/ci/run-validation-targets.sh --fail-fast \
 		shared-tooling-check tools-check metadata-check runtime-check check-pins \
-		check-doc-links fmt-check check test clippy docs-check msrv-check \
+		deployment-deps-check external-ic-check check-doc-links fmt-check clippy check test docs-check msrv-check \
 		package-check check-release-commands test-release test-publish managed-build test-ic
 
 install-app-tools:
@@ -97,7 +111,7 @@ install-app-tools:
 app-tools-check:
 	+bash scripts/ci/managed-ic.sh check
 
-managed-build:
+managed-build: deployment-deps-check external-ic-check
 	+bash scripts/ci/managed-ic.sh build
 
 test-blob-worker:
@@ -126,17 +140,12 @@ publish:
 	+@bash scripts/release/publish.sh
 
 install-validation-tools:
-	@bash -ec 'test "$$(uname -s):$$(uname -m)" = Linux:x86_64; \
-		. ci/tool-versions.env; \
-		bash scripts/ci/install-shellcheck.sh --version "$$SHARED_TOOLING_SHELLCHECK_VERSION" \
-			--sha256 "$$SHARED_TOOLING_SHELLCHECK_SHA256_LINUX_X86_64" --install-dir "$(CURDIR)/.tools/ci/bin"; \
-		bash scripts/ci/install-actionlint.sh --version "$$SHARED_TOOLING_ACTIONLINT_VERSION" \
-			--sha256 "$$SHARED_TOOLING_ACTIONLINT_SHA256_LINUX_AMD64" --install-dir "$(CURDIR)/.tools/ci/bin"; \
-		bash scripts/ci/install-gitleaks.sh --version "$$SHARED_TOOLING_GITLEAKS_VERSION" \
-			--sha256 "$$SHARED_TOOLING_GITLEAKS_SHA256_LINUX_X64" --install-dir "$(CURDIR)/.tools/ci/bin"'
+	@bash scripts/ci/install-ci-tool.sh shellcheck --install-dir "$(CURDIR)/.tools/ci/bin"
+	@bash scripts/ci/install-ci-tool.sh actionlint --install-dir "$(CURDIR)/.tools/ci/bin"
+	@bash scripts/ci/install-ci-tool.sh gitleaks --install-dir "$(CURDIR)/.tools/ci/bin"
 
 lint:
-	"$(SHELLCHECK)" scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh .githooks/pre-commit
+	"$(SHELLCHECK)" --external-sources scripts/release/*.sh scripts/ci/check-runtime-identities.sh scripts/ci/managed-ic.sh .githooks/pre-commit
 	"$(ACTIONLINT)" .github/workflows/ci.yml
 
 check-secrets:

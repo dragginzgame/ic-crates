@@ -31,38 +31,6 @@ sub command_output {
 
 sub git_output { return command_output('git', @_); }
 
-sub set_version {
-    my ($previous, $candidate) = @_;
-    identity('0' x 40, $previous, '2000-01-01');
-    identity('0' x 40, $candidate, '2000-01-01');
-    $previous ne $candidate or die "candidate must differ from previous\n";
-    my $model = $json->decode(command_output('yq', '-p', 'toml', '-o', 'json', '.', 'Cargo.toml'));
-    my $package_version = $model->{workspace}{package}{version};
-    my $dependency_version = $model->{workspace}{dependencies}{'ic-crates-protocol'}{version};
-    for ($package_version, $dependency_version) {
-        defined($_) && ($_ eq $previous || $_ eq $candidate) or die "manifest differs from release intent\n";
-    }
-    my $text = read_file('Cargo.toml');
-    my ($section, $package_changes, $dependency_changes) = ('', 0, 0);
-    my @lines = split /(?<=\n)/, $text;
-    for my $line (@lines) {
-        if ($line =~ /^\[([^\]\r\n]+)\][ \t]*(?:\#.*)?\n?\z/) { $section = $1; }
-        if ($section eq 'workspace.package') {
-            $package_changes += $line =~ s/^(version[ \t]*=[ \t]*)"\Q$package_version\E"/$1"$candidate"/;
-        } elsif ($section eq 'workspace.dependencies' && $line =~ /^ic-crates-protocol[ \t]*=/) {
-            $dependency_changes += $line =~ s/\bversion[ \t]*=[ \t]*"\Q$dependency_version\E"/version = "$candidate"/;
-        } elsif ($section eq 'workspace.dependencies.ic-crates-protocol') {
-            $dependency_changes += $line =~ s/^(version[ \t]*=[ \t]*)"\Q$dependency_version\E"/$1"$candidate"/;
-        }
-    }
-    $package_changes == 1 && $dependency_changes == 1 or die "cannot locate unique version assignments\n";
-    -d 'target' && !-l 'target' or die "expected regular target directory\n";
-    my ($out, $path) = tempfile('release-manifest.XXXXXX', DIR => 'target', UNLINK => 0);
-    print {$out} join('', @lines) or die "manifest write failed\n";
-    close $out or die "manifest close failed\n";
-    chmod((stat('Cargo.toml'))[2] & 0777, $path) or die "manifest mode failed\n";
-    rename $path, 'Cargo.toml' or die "manifest publication failed\n";
-}
 
 sub identity {
     my ($source, $version, $date) = @_;
@@ -105,10 +73,7 @@ sub check_paths {
     !keys(%expected) or die "incomplete release metadata\n";
 }
 
-if (($operation // '') eq 'set-version') {
-    @args == 2 or die "set-version expects previous candidate\n";
-    set_version(@args);
-} elsif (($operation // '') eq 'receipt') {
+if (($operation // '') eq 'receipt') {
     @args == 3 or die "receipt expects source version date\n";
     identity(@args);
     my %hashes = map { $_ => sha256_hex(read_file($_)) } @files;
@@ -137,5 +102,5 @@ if (($operation // '') eq 'set-version') {
     my $receipt = decode_receipt(git_output('show', "$commit:docs/release.json"));
     check_receipt($receipt, $source, $version, $date, sub { git_output('show', "$commit:$_[0]") });
 } else {
-    die "usage: metadata.pl set-version|receipt|check|index-check|check-commit ...\n";
+    die "usage: metadata.pl receipt|check|index-check|check-commit ...\n";
 }

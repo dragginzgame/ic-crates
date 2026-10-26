@@ -72,6 +72,58 @@ apps/
   upstream sources and frozen historical evidence are not maintained package
   locations; do not move them or rewrite history to satisfy this layout.
 
+## Coordinated versions and workspace boundaries
+
+Keep established workspace groupings and their coordinated versions by default.
+One release identity reduces internal version combinations and lets related
+packages qualify changes together. It does not merge package responsibilities,
+enable optional features or update downstream lockfiles automatically.
+
+- Judge a proposed merge or split by actual shared types, dependency direction,
+  consumer upgrades and release obligations. Similar names or occasional
+  unchanged members in a release are insufficient reasons to reorganize.
+- Before proposing independent versions or another workspace migration, show a
+  recurring maintenance problem, why a local fix or release batching is
+  insufficient, and the total migration and qualification cost for consumers.
+  Preserve approved independent graphs and require explicit maintainer agreement
+  for a boundary or versioning-policy change.
+- Prefer batching related, already-planned breaking changes into one coordinated
+  release before downstream adoption. Avoid repeated consumer migrations for
+  adjacent changes, but do not hold urgent fixes for unrelated work or enlarge a
+  release with speculative changes. Classify the combined release and downstream
+  adoption using the [package-impact rules](changelogs.md#classify-the-released-packages-own-impact).
+- Keep unrelated repositories independently versioned. Shared Tooling snapshot
+  adoption, a common dependency or a common owner does not require fleet-wide
+  version synchronization. Verify adoption through the consumer's
+  [selected dependency graphs](../docs/cargo-graph-checks.md#coordinated-release-adoption).
+
+## Workspace member roles
+
+The root `[workspace]` table's `members` array may group packages with comment
+headers `# Production packages` and `# Tests and tooling packages`:
+
+```toml
+[workspace]
+members = [
+    # Production packages
+    "crates/example",
+    # Tests and tooling packages
+    "crates/example-tests",
+]
+```
+
+Use section headers rather than a role annotation after each member. Classify
+packages by their role in this workspace; a package used in both production and
+tests belongs in the production group. Publication settings and registry
+availability do not establish that role. These comments describe membership;
+they do not change `default-members`, build selections or publication policy.
+
+Member-role headers are distinct from the dependency-role headers in
+`[workspace.dependencies]`, governed by the
+[Cargo dependency rules](cargo-dependencies.md#dependency-roles-and-deployment-checks).
+Grouping does not require moving or renaming packages or changing their approved
+layout.
+
 ## Independent workspaces and exceptions
 
 The default is one workspace and one selected lockfile. A separate maintained
@@ -140,8 +192,9 @@ In the owning repository's authorized change:
    for every affected workspace with prepared tools and caches. Keep the existing
    Linux/macOS qualification obligations and local command authority. Adoption
    does not add a new gate or authorize publication, cleanup or version changes.
-   Code changes still complete the repository's existing full validation suite
-   before delivery under the baseline.
+   Qualify directly affected consumers with focused checks before handoff;
+   reserve local full-suite runs for release or an explicit request under the
+   baseline.
 5. Verify the adopted snapshot and update local instructions and documentation.
    Distinguish committed adoption from local preparation and native execution
    evidence from source inspection.

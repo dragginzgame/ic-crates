@@ -605,7 +605,7 @@ dependencies = [
  "cap-primitives",
  "cap-std",
  "io-lifetimes 3.0.1",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -622,7 +622,7 @@ dependencies = [
  "maybe-owned",
  "rustix",
  "rustix-linux-procfs",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
  "winx",
 ]
 
@@ -1342,7 +1342,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2089,8 +2089,8 @@ dependencies = [
  "ic-agent",
  "ic-blob-storage-contracts 0.47.1",
  "ic-crates-protocol",
- "ic-host-fs 0.68.5",
- "ic-host-process 0.68.5",
+ "ic-host-fs 0.68.6",
+ "ic-host-process 0.68.6",
  "serde",
  "serde_json",
  "subtle",
@@ -2123,8 +2123,8 @@ dependencies = [
  "canic-host",
  "ic-blob-storage-contracts 0.47.1",
  "ic-crates-protocol",
- "ic-host-fs 0.68.5",
- "ic-testkit 0.68.5",
+ "ic-host-fs 0.68.6",
+ "ic-testkit 0.68.6",
  "icydb",
  "serde",
  "serde_json",
@@ -2192,9 +2192,9 @@ dependencies = [
 
 [[package]]
 name = "ic-host-artifacts"
-version = "0.68.5"
+version = "0.68.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d58589bc1d3e292b6ab090864b4d0f72ae22f4d11c8818ebbc03159517f55b56"
+checksum = "dd8df0cbaa8f0bd284169a4464e5e3955943853d08b930a1ce5f5e357d8052b5"
 dependencies = [
  "flate2",
  "sha2 0.10.9",
@@ -2232,11 +2232,11 @@ dependencies = [
 
 [[package]]
 name = "ic-host-fs"
-version = "0.68.5"
+version = "0.68.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bfaf4d4e82d1a49867de041e05de323131088d1e63fd441fea7681158fbe282"
+checksum = "c0d48acae2d3ef36b6efe4991d79d87938deb7b7f4ae30165b45985f03fa8d63"
 dependencies = [
- "ic-host-artifacts 0.68.5",
+ "ic-host-artifacts 0.68.6",
  "rustix",
  "thiserror 2.0.18",
 ]
@@ -2267,13 +2267,13 @@ dependencies = [
 
 [[package]]
 name = "ic-host-process"
-version = "0.68.5"
+version = "0.68.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c756020e605e69cf6c2c9ecdc0da9e28b2dde6742d4fde89e648dd09742368a"
+checksum = "406568ed0d195ecdeaacf3c6d5e6e7e9ada4db993f4cb885720bd6f7be7f801d"
 dependencies = [
  "command-fds",
- "ic-host-artifacts 0.68.5",
- "ic-host-fs 0.68.5",
+ "ic-host-artifacts 0.68.6",
+ "ic-host-fs 0.68.6",
  "libc",
  "rustix",
 ]
@@ -2365,9 +2365,9 @@ checksum = "65fdc32ce3d16e57750b9b8324a203ec3d7ead289b6ebbdf18cfd955d602229e"
 
 [[package]]
 name = "ic-platform"
-version = "0.6.16"
+version = "0.6.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caf3dbe36ae7e62f122a1d43e2d51dc537ec8ebf1004005ac9f36303068c69d1"
+checksum = "52bcf60b412c28eb1a461eab055aa6ea93b1413b177a6d208b78351b9afddccb"
 dependencies = [
  "candid",
  "crc32fast",
@@ -2493,13 +2493,13 @@ dependencies = [
 
 [[package]]
 name = "ic-testkit"
-version = "0.68.5"
+version = "0.68.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1224ea8643c009924ff793457ef5a25f97802860512421a51adf0ff8453030b9"
+checksum = "bd4d31fe40620fad322eee97188f6ede6828b328eed67de100f771b339e18a28"
 dependencies = [
- "ic-host-artifacts 0.68.5",
- "ic-host-fs 0.68.5",
- "ic-host-process 0.68.5",
+ "ic-host-artifacts 0.68.6",
+ "ic-host-fs 0.68.6",
+ "ic-host-process 0.68.6",
  "ic-platform",
  "libc",
  "thiserror 2.0.18",
@@ -2552,9 +2552,9 @@ dependencies = [
 
 [[package]]
 name = "ic-wire"
-version = "0.7.12"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6ee402ffac424720ca72150d16afbacc7d9b6648ef820faaf477cb51eae33ac"
+checksum = "7de85c57afae161067f2f936bb5476c61ac227ba5a880eea584135f32588de65"
 dependencies = [
  "bytemuck",
  "ic-wire-derive",
@@ -2566,9 +2566,9 @@ dependencies = [
 
 [[package]]
 name = "ic-wire-derive"
-version = "0.7.12"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6499d0dae0f528b524814f6748c084d0c8c88cc789b6848bfc09308f62c84800"
+checksum = "1979e7e3772343d04260b370202b501c606ee8b9a56e9ec1a792de8a06e81c9c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3271,7 +3271,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3730,7 +3730,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3972,7 +3972,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4039,7 +4039,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4439,7 +4439,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4468,7 +4468,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "psm",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4615,7 +4615,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5284,7 +5284,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

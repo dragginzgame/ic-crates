@@ -13,10 +13,11 @@ links these methods; it does not maintain a second set of audit questions.
 | --- | --- |
 | Are errors, APIs, tests, documentation and repository artifacts maintained safely? | [Code hygiene](code-hygiene.md) |
 | Does equivalent behavior have one semantic owner and converge through one flow? | [Flow convergence and duplication](flow-convergence-and-duplication.md) |
+| Do workflow inputs, credentials and promoted artifacts retain their intended authority? | [CI and release integrity](ci-release-integrity.md) |
 | Do current behavior axes and ownership spread create demonstrated maintenance friction? | [Complexity and technical debt](complexity-and-technical-debt.md) |
 | Which retained or exposed code units lack a current authority reason? | [Module surface hardening](module-surface-hardening.md) |
 | How should an authorized module cleanup implement those findings? | [Module cleanup](module-cleanup.md), an implementation procedure, not another audit |
-| How do those methods apply to Candid services, canister lifecycle and Wasm budgets? | [IC canister application addendum](ic-canister-applications.md), alongside the selected method |
+| How do those methods apply to IC application protocols, canister lifecycle and Wasm budgets? | [IC canister application addendum](ic-canister-applications.md), alongside the selected method |
 
 Select the smallest method and affected owners that answer the request. Follow
 contracts through producers, consumers, generated boundaries and recovery paths;
@@ -65,6 +66,11 @@ Use a compact report with:
 3. Findings: consequence, evidence, severity, owner, disposition and action trigger.
 4. Intentional retention/no-action decisions and verification gaps.
 5. Checks performed and their results, skipped checks and remaining adoption work.
+
+Completed maintainer reports also include the scoped metrics in the
+[change-reporting rules](../rules/change-reporting.md), including explicit zeroes
+for inspection-only work. The detailed symbol inventory remains confined to the
+final Codex app handoff, not a saved audit report.
 
 Use `LOW`, `MEDIUM` or `HIGH` severity per finding, justified by present impact.
 HIGH means an evidenced serious correctness, integrity, security, availability

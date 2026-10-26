@@ -1,4 +1,5 @@
 # Dragginzgame Engineering Baseline
+<!-- Shared companions: rules/rpc-budgets.md -->
 
 Shared Tooling is the authoritative source of mandatory common engineering rules
 and canonical shared tooling for all `dragginzgame` repositories. This file is
@@ -32,9 +33,10 @@ Consumer choices described in those guides remain subject to this baseline.
   with scope and reason; calling it stricter does not bypass that requirement.
 - Apply the shared baseline and the local overlay within its delegated scope.
   Local instructions do not silently override the common baseline.
-  Read the current handoff for accepted work and implementation status. Treat
-  historical documents as evidence, not current authority. Verify documentation
-  against implementation; distinguish supported behavior from unfinished plans.
+  Read the existing [current handoff](#repository-handoff-files) for accepted
+  work and implementation status. Treat historical documents as evidence, not
+  current authority. Verify documentation against implementation; distinguish
+  supported behavior from unfinished plans.
 - Every repository must have a concise, accurate GitHub description of its
   current purpose and scope, consistent with its README and implementation.
   Review it during baseline adoption and whenever the repository's purpose,
@@ -43,19 +45,25 @@ Consumer choices described in those guides remain subject to this baseline.
 
 ## Scope and authorization
 
+- **Task-relevant read-only inspection of sibling repositories is authorized by
+  default and requires no separate permission.** Read source, manifests, history,
+  instructions and existing evidence as needed to verify consumers, ownership or
+  compatibility. Consumer `AGENTS.md` files must not add an "ask before reading
+  siblings" gate. Honour explicit user exclusions and access restrictions. This
+  authorizes inspection, not edits or commands that write in a sibling checkout;
+  those follow the contribution and validation rules below.
 - Work within the authorized repositories and preserve unrelated dirty work.
   Re-read dirty files before editing. Agents working in one repository must not
-  edit code or other files in any other repository unless the maintainer expressly
-  authorizes that target repository and the intended change. This includes Shared
-  Tooling, upstream dependencies and downstream consumers, whether edits are made
-  directly, by delegated agents, or through scripts, formatters and generators.
-  Changing directories, shared ownership, dependency fixes, inspection requests
-  and issue-reporting authority do not grant cross-repository edit permission.
-  Without that authorization, keep other repositories read-only and report the
-  proposed fix under the GitHub issue authorization below.
-  Prefer owning-repository issues for sibling findings. Explicit scoped
-  authorization is an exception to this read-only default, and remains valid
-  through the necessary implementation and qualification of that change.
+  edit another contributor's sibling checkout in place. Relevant cross-repository
+  fixes and adoption work in `dragginzgame/*` have standing authorization through
+  the [isolated PR workflow](rules/contributions.md#cross-repository-pull-requests):
+  use a separate worktree or clone, topic branch, scoped edits and checks, commits,
+  branch push and PR. Do not ask for separate permission for those steps.
+  Preserve explicit read-only instructions, repository exclusions and active
+  ownership. Contributions under other GitHub owners require explicit
+  target/action authorization.
+  Direct sibling-checkout edits require an express exception naming that checkout
+  and change; shared ownership or a PR contribution never supplies that exception.
 - Staging, commits and release execution are user-owned by default. During
   ordinary implementation, leave the real checkout's index, package/application
   release versions and Git refs alone. Do not run `git add .`, `git add -A`,
@@ -64,19 +72,22 @@ Consumer choices described in those guides remain subject to this baseline.
   recovery and indirect calls from scripts or Make targets. "Keep going",
   "prepare the release", "work on 0.4" and "ready to push?" authorize no such
   effects. Prepare source, numbered changelog notes and validation, then hand
-  them to the user. Explicit delegation follows the contribution rules below;
+  them to the user. Explicit delegation and the standing isolated PR exception
+  follow the contribution rules below;
   a maintainer-only local release boundary must not be bypassed by inference.
 - Follow the [contribution rules](rules/contributions.md): ordinary contributions
   from people and agents use branches and pull requests. Agents may create
   scoped commits when asked to commit or deliver a PR. A PR request includes the
   branch, commits, branch push and PR creation/update needed to deliver it;
   do not require the maintainer to commit first or approve each substep again.
-  This scoped PR exception does not authorize release versions or tags.
+  The standing cross-repository PR workflow supplies the same scoped authority
+  without a separate PR request. Neither route authorizes release versions or tags.
 - A PR request does not authorize merging, pushing directly to `main`, `master`
   or another integration/release branch, or rewriting shared history. Those
   effects require explicit authorization. Preserve branch protections and
   required reviews/checks. Ordinary repair or continuation requests authorize
-  local work, not an unsolicited commit or push.
+  local work in the current repository; the standing cross-repository PR workflow
+  separately authorizes only its isolated contribution commits and branch pushes.
 - Agents may execute package/manifest version changes, tags, pushes, publication,
   deployment and paid effects when explicitly authorized for their target and effect.
   Authorization includes the necessary documented substeps of the requested
@@ -95,7 +106,8 @@ Consumer choices described in those guides remain subject to this baseline.
   require explicit maintainer authorization for that destination and action;
   searching and reading issues remain permitted. Prepare external issue content
   for review before requesting authorization. This does not authorize
-  cross-repository file edits, unrelated messages or release effects.
+  unrelated messages or release effects. Cross-repository source contributions
+  use the separate isolated PR authority above, not issue-posting authority.
 
 ## Ownership and simplification
 
@@ -114,6 +126,94 @@ Consumer choices described in those guides remain subject to this baseline.
   code is changed at its generator, then regenerated by the authorized workflow.
 - Dependencies own their established contracts; do not reproduce them downstream.
   Libraries must not silently claim consumer endpoints or lifecycle ownership.
+
+## DFINITY dependencies: own the solution
+
+- **Do not submit PRs to DFINITY crates or repositories, or make our work depend
+  on DFINITY accepting, implementing, maintaining or publishing changes.** Plan
+  against the capabilities of already available, qualified dependencies.
+- When those capabilities are insufficient, maintain the necessary implementation
+  ourselves at its canonical owner or change our code so the dependency is no
+  longer needed. Apply the [maintenance and provenance rules](rules/dependency-pinning.md#maintaining-upstream-code)
+  and the [IC Platform boundary](rules/cargo-dependencies.md#external-ic-dependency-boundary).
+  This does not require removing working dependencies or rewriting cryptography.
+- Retire issues whose proposed outcome requires future DFINITY work as not
+  planned. Preserve unresolved local defects in their owning issues with a
+  self-owned solution; closing an upstream plan does not mean the defect is fixed.
+
+## Repository files: no symlinks
+
+- **Do not create or commit symlinks for maintained repository files or
+  directories.** This includes source, manifests, documentation, scripts, shared
+  snapshots, license files and shipped package assets. Generated source and
+  package outputs follow the same rule; fix their generator when necessary.
+- Use explicit dependency/configuration paths or the canonical package interface.
+  When packaging needs a local file, use a regular copy and verify it against
+  its owner. In particular, package-local `LICENSE` files must be regular files
+  containing the applicable complete terms and notices, never symlinks.
+- The permitted repository-tooling uses are generated selection pointers owned
+  and admitted by Shared Tooling's verified executable store, and deliberately
+  created symlinks in isolated rejection/security fixtures. Keep these outside
+  maintained source and shipped package assets; they do not authorize general
+  file aliases, package-license links or links into sibling checkouts.
+- Operating-system/toolchain layouts and directory aliases outside the maintained
+  repository tree remain external inputs, subject to each tool's path admission.
+  This rule does not authorize deleting existing installations, evidence or link
+  targets. Replace an obsolete repository link without modifying its target.
+- Review tracked Git modes, working-tree paths and actual package file lists
+  when adopting the rule. A clean index alone does not prove generated or packaged
+  files comply. Any other repository-owned use needs a scoped maintainer-approved
+  exception under the baseline's local-authority rules.
+
+## CLI applications
+
+- **Use Clap for Rust CLI applications**, including developer tools and maintained
+  utility binaries. Use its derive or builder API rather than handwritten
+  `std::env::args` loops, custom flag/subcommand dispatch or a parallel parser.
+- Let Clap own argument/value parsing, typed values, defaults, required arguments,
+  allowed values, argument groups/conflicts/dependencies, help, version, usage and
+  parse-error diagnostics. Before adding custom CLI logic, check whether Clap
+  already provides the behavior and use that capability.
+- Prefer Clap's extension points when application-specific parsing is needed.
+  Keep custom validation limited to domain constraints Clap cannot express;
+  document that gap and keep domain semantics with their existing owner. Do not
+  reimplement generic CLI mechanics behind wrappers or duplicate manual checks
+  that Clap already enforces.
+
+## IC application encoding
+
+- **Use `ic-wire` for all application endpoints we own**, including public
+  endpoints called by third parties, owned canister RPC and frontend/client
+  payloads. Caller location or endpoint visibility does not select the codec.
+  Reuse Wire's encoding, decoding and generated bindings.
+- Candid adapts independently defined interfaces that require it, such as
+  management/system canisters, NNS/SNS and ledger protocols. A third-party caller
+  of our application is not itself an external Candid protocol. Record the
+  required interface; existing derives or a Candid-first example are not reasons
+  to retain it. Required external Candid dependencies still follow the
+  [IC Platform boundary](rules/cargo-dependencies.md#external-ic-dependency-boundary).
+- A missing released Wire capability requires an owning issue and qualification
+  before adoption, or an expressly approved scoped exception. Do not introduce
+  a local codec or a Candid fallback to bypass that work.
+- Remove Candid derives, conversions and codec helpers from internal types when
+  no remaining Candid contract needs them. Do not wrap an unchanged Candid payload
+  in Wire merely to claim adoption. Storage layouts and canonical hash inputs
+  retain their owning contracts. Existing persisted Candid checkpoint bytes are
+  a compatibility obligation, not permission for new Candid storage formats.
+- IC Wire owns codecs, resource admission and codec generation. Consumers retain
+  endpoint exports, transport, authentication, method identities, semantic
+  validation, rollback and retry policy. Qualify the selected released APIs and
+  both ends of the actual integration, including zero-argument RPCs and lifecycle
+  argument decoding. Explicit codec hooks alone do not prove Wire framing or
+  binding conformance, endpoint behavior or instruction/size savings.
+- Generated cross-runtime RPC clients derive byte, node and depth budgets from
+  one product policy owner. Follow the [RPC budget qualification rule](rules/rpc-budgets.md)
+  for intentional asymmetry, generated-policy drift checks and actual runtime
+  boundaries; equal numbers alone do not establish equivalent admission.
+- Changing existing message bytes requires an explicit consumer migration with
+  affected callers, generated bindings and retained retry bytes accounted for.
+  Follow the [pre-1.0 contract rules](#pre-10-contracts); do not silently change a
+  public interface or introduce parallel codecs/fallback readers for adoption.
 
 ## Complete, reviewable changes
 
@@ -134,15 +234,15 @@ Consumer choices described in those guides remain subject to this baseline.
 - Remove superseded paths completely when their obligations permit retirement.
   Name any remaining consumer or deployment blocker and the evidence needed to
   close it. Do not leave replacement and old implementation indefinitely active.
-- When cleaning up code, list every removed function, method and type only in the
-  final response to the maintainer in the Codex app, including private symbols
-  and those inside deleted files.
-  Give exact names, their former file or module, why each was removed and its
-  replacement when applicable. Distinguish deletions from moves or renames.
-  Shared reasons may be grouped, but every removed name must still be listed.
-  Do not copy this inventory into repository files, changelogs, reports, commit
-  messages, PRs or issues. Continue documenting meaningful public API removals
-  and required consumer actions at their normal owners.
+- Follow the [change-reporting rules](rules/change-reporting.md) in every completed
+  maintainer report, including inspection and issue-only work. Include scoped
+  Rust, type-declaration and documentation added/removed/net metrics, with explicit
+  zeroes or unavailable evidence. Keep Git line churn separate from semantic
+  deletion counts. In the final Codex app handoff, use **symbol changes** with
+  genuinely created and deleted functions, methods and types only. Omit moved,
+  renamed and edited declaration inventories and counts; retained identities are
+  not creations or deletions. Keep the compact inventory in that handoff only. Ordinary
+  public API removal and consumer-action documentation stays at its normal owner.
 - Complete changelog maintenance under the [common changelog rules](rules/changelogs.md)
   as part of the coherent batch, including automatically selecting and maintaining
   the numbered next release at the top. Do not wait for a separate notes request.
@@ -185,22 +285,85 @@ Consumer choices described in those guides remain subject to this baseline.
   structural and module reviews. Keep product invariants and validation commands
   in consumer overlays. Audit adoption adds no automatic broad gate or schedule;
   findings do not supply repair authority. Preserve historical reports locally.
-- Run the smallest relevant checks automatically during authorized development.
-  Before delivering a completed code change as ready, run the repository's
-  documented full validation suite. This is standing validation authority within
-  the authorized repository; no separate request is needed. Local command lists
-  must distinguish focused development checks, the full delivery suite and release
-  commands. Reuse passing evidence for unchanged inputs; rerun affected checks
-  after further changes. Documentation-only changes need link, consistency and
-  diff checks, unless the repository documents additional relevant validation.
-  Inspection-only tasks do not authorize a full suite. Release execution,
+- Run the smallest meaningful checks automatically during authorized development
+  and before handoff: changed packages, modules, scripts and directly affected
+  consumers or contracts. Include relevant failure/recovery cases. Broaden the
+  selected checks when the change crosses boundaries, not merely because a batch
+  is complete, touches shared code or spans several files. Preserve explicit
+  maintainer-approved local restrictions on even focused execution.
+- Reserve agent-run local full repository/workspace suites and broad validation
+  gates for an explicitly authorized release or an explicit request for those
+  checks. Implementation, continuation, PR preparation and readiness wording do
+  not authorize a full suite. Focused passing evidence is sufficient for ordinary
+  handoff; an unrun full suite alone is not a blocker. Report the tested scope and
+  remaining release checks without claiming full-suite or native-host coverage.
+  Configured CI and required branch checks remain independent and unchanged;
+  this local execution policy does not weaken the release runner's full gate.
+- **Run expensive hosted integration and native-host CI asynchronously by
+  default for ordinary development, PR delivery and authorized merges.** Complete
+  focused checks and review; when merging is authorized and enforced GitHub
+  checks/reviews permit it, merge normally and report links to pending runs.
+  Do not poll or keep a turn open solely for the full matrix to finish. Report
+  the specific enforced blocker when one prevents integration; never bypass
+  protection, self-approve or disable checks. A maintainer may explicitly request
+  synchronous qualification for a task.
+  Pending or cancelled runs are not passing evidence. Retain host coverage,
+  exact source/run identities and visible failure reporting, with an owning
+  follow-up for failures. Review known failures on their merits; asynchronous
+  cadence does not excuse a demonstrated defect. Separate release, publication,
+  deployment and issue-specific acceptance gates still apply, and this cadence
+  grants no merge or release authority.
+  Focused source review and enforced GitHub approval are distinct: do not invent
+  an independent GitHub approval requirement when none is configured or required
+  by the repository's contribution policy.
+- Agent-runtime approval restrictions are an independent execution boundary;
+  repository guidance cannot override them or change runtime configuration. If
+  runtime approval rejects an otherwise authorized action, retain the prepared
+  work and report the exact action and stated rejection reason. Request narrowly
+  scoped additional authorization only when the runtime permits that route.
+  Do not poll optional CI merely to wait out the rejection, or switch APIs,
+  credentials or execution paths to evade it. Continue independent authorized
+  work; an approval rejection does not establish a source defect or CI failure.
+- **Rust release and deployment entrypoints must run Clippy early and stop on
+  failure.** After source/recovery admission and required compiler/dependency/tool
+  preparation, run the consumer's existing Clippy gate before expensive product
+  builds, test suites, packaging or new publication/deployment effects. Preserve
+  its selected packages, targets, features and lint policy; a narrower ad hoc
+  `cargo clippy` invocation does not replace that gate. Establish ordering with
+  sequential recipes or dependency edges that also hold under parallel Make.
+  A failed lint must prevent later stages, and a passing lint does not replace
+  the remaining complete gate or existing recovery obligations.
+- Local command lists must distinguish focused development/handoff checks from
+  full release validation and release execution. Reuse passing evidence for
+  unchanged inputs; rerun affected checks after changes or failures. Documentation-
+  only work needs link, consistency and diff checks, not code test suites.
+  Inspection-only work does not activate broad validation. Release execution,
   publication and deployment retain their separate explicit authorization.
+- Shared Tooling owns this validation cadence. Consumer overlays name local
+  commands and product-specific qualification requirements; link to this section
+  rather than duplicating its trigger rules. During adoption, remove conflicting
+  full-suite-before-handoff wording from active local instructions and guides.
+  Keep reviewed snapshots intact. If the pinned baseline still requires that
+  cadence, record a scoped maintainer-approved exception until a reviewed
+  snapshot containing this policy is adopted, then retire the redundant exception.
+- Shared Tooling owns regression tests for its implementation. Consumers qualify
+  snapshot integrity, their actual callers and product contracts, and applicable
+  native tool behavior. Adopting shared code does not require replaying its full
+  producer regression matrix in every consumer gate. Retain an upstream fixture
+  when it supplies a named consumer proof that is otherwise missing; review that
+  proof before retiring any dispatch. Follow the
+  [consumer qualification selection](docs/consuming-snapshots.md#consumer-qualification-selection)
+  when changing test rosters; this does not automatically change existing gates.
 - Check for active builds before compilation or source mutation. Do not change
   source under active validation or compete for its build lock. Use the owning
   repository's build directory; preserve unrelated artifacts.
-- For offline validation, prepare caches for the selected lockfile explicitly
-  before validation or release mutation. Preserve lock selection and report
-  preparation failures. An authorized dependency update includes the registry/Git
+- Authorized development, tests and validation include `cargo fetch --locked`
+  for missing dependency sources in the affected workspace's existing lockfile;
+  no separate maintainer approval is needed. Preserve lock selection and report
+  preparation failures. A missing or inconsistent lockfile does not authorize
+  an unlocked update. Honour explicit offline settings and actual environment
+  network restrictions. For offline gates, prepare caches before validation.
+  An authorized dependency update includes the registry/Git
   access needed for that selected update; do not require separate network approval
   or add `--offline`, `--frozen` or `CARGO_NET_OFFLINE=true` by habit. Offline
   validation is not a blanket policy for dependency preparation. Follow the
@@ -210,8 +373,10 @@ Consumer choices described in those guides remain subject to this baseline.
   A selected standard release includes its documented locked cache and selected
   executable-tool preparation under the [release contract](docs/releases.md),
   including required cache preparation before compiled
-  adapter startup. Explicit offline settings remain authoritative; ordinary
-  checks and standalone helper reads do not gain network permission.
+  adapter startup. Locked source preparation does not authorize executable-tool
+  installation, runtime network access, new credentials/targets, paid operations
+  or release effects. Keep offline checks and standalone helper reads offline;
+  prepare missing sources separately rather than adding implicit fetches to them.
 - Test maintained observable behavior, typed failures and genuine architectural
   boundaries. Delete tests that only prohibit a removed name or remember an old
   implementation. Source inspection can enforce a live architectural invariant;
@@ -242,6 +407,12 @@ Consumer choices described in those guides remain subject to this baseline.
   default; PR delivery prepares a review branch and validates the admitted merged
   commit afresh before tagging. Never select another policy to bypass a rejected
   push or branch protection.
+- Standard release entrypoints must select their required prepared executables
+  through the consumer's offline admission interface; do not require maintainers
+  to export tool paths in each shell. Fresh preflight prepares missing selections
+  only after source/recovery admission. Recovery admits the saved source's
+  selection without installing or resolving partially prepared live metadata.
+  Low-level helpers may require explicit paths supplied by their calling adapter.
 - These one-shot commands are user-operated by default. An agent needs explicit
   delegation to run the selected release for the selected repository and
   destination. That request authorizes the
@@ -254,23 +425,23 @@ Consumer choices described in those guides remain subject to this baseline.
 - Use standard semantic-version increments: patch increments the patch; minor
   increments the minor and resets the patch; major increments the major and
   resets both lower components. Apply the pre-1.0 compatibility rule above.
-- Stop on failure and preserve build and evidence artifacts. Preflight or
-  validation-only failures restart through the normal target against current
-  source with fresh preflight and complete validation; retain earlier evidence.
-  Persist exact release intent before preparation may begin, then reconcile an
-  interrupted release automatically when a normal target is rerun, at its saved
-  version and commit. In direct delivery, if that release is committed and HEAD
-  has newer fixes or a different increment is requested, reconcile it first,
-  then run fresh preflight and complete validation for the requested increment
-  from the actual local version. PR delivery finishes only the saved release; an open PR returns
-  a pending, nonzero result so chained publication cannot start before merge.
-  Squash/rebase merges require fresh complete validation of the exact merged
-  commit with the unchanged prepared tree. Late evidence checks use
-  `RELEASE_COMMIT`, which may precede HEAD. Select unfinished intent before
-  computing another increment. A newer clean descendant commit can supersede
-  direct preparation before staging: archive its local-metadata-only intent,
-  select the requested increment from current metadata, and repeat preflight and
-  complete validation. Stop for identity, payload, destination or concurrency conflicts.
+- Stop on failure and preserve build and evidence artifacts. **Normal
+  `release-patch`, `release-minor` and `release-major` always start fresh from
+  current clean, committed source and canonical metadata, with full preflight
+  and validation. Never scan historical plans, reuse their validation or replay
+  their commit/tag/push effects as part of a normal release.** A prior plan's
+  phase, source, destination or malformed contents cannot block a fresh release.
+  The new candidate's stale local plan/staging/PR receipts may be discarded;
+  old plans are not a required historical archive. Keep build and validation
+  evidence attributable to its original attempt.
+  Persist exact intent before preparation may begin. Recovery of that specific
+  attempt is explicit through `release-resume VERSION=X.Y.Z`, bound to its saved
+  source, version, payload and destination. PR recovery remains pending/nonzero
+  until merge and fresh complete validation of the admitted merged commit; late
+  evidence checks use `RELEASE_COMMIT`, which may precede HEAD. Current dirty
+  source/index, occupied locks, candidate ref/payload, destination and branch
+  protection conflicts still stop the new release. Missing older tags or
+  registry/Git delivery disagreement do not establish such a conflict.
   Do not force-push, overwrite tags, silently bump again or add implicit package
   publication, deployment or post-release cleanup.
 
@@ -284,6 +455,40 @@ Consumer choices described in those guides remain subject to this baseline.
   Cleanup requires explicit scope and authority. Tools may clean temporary files
   they own; they must not erase consumer artifacts or the only retained evidence.
 
+## IC stable-memory governance
+
+- Production stable stores in `dragginzgame` IC applications and components must
+  use memory handles issued by `ic-memory` after successful admission and durable
+  allocation commitment. Stable keys and their retained memory-ID assignments
+  belong to `ic-memory`; store formats, schema admission and data semantics stay
+  with their storage owners.
+- Application and component code must not independently assign memory IDs,
+  construct `MemoryManager` instances, or read/write unmanaged stable memory.
+  The host integration supplies raw backing memory to its owned `ic-memory`
+  runtime; it must not retain an alternate store-access path or create another
+  manager over that backing. Raw backing access and manager construction belong
+  to that integration boundary and `ic-memory` internals.
+- Production storage integration entry points must require checked runtime
+  handles and preserve validation and persistence before opening stores.
+  Generic storage engines may accept the upstream `Memory` trait, but accepting
+  that trait alone does not enforce allocation governance. Their production
+  callers must supply `ic-memory::RuntimeMemory` through the checked integration.
+- `ic-storage` is a collection layer; it does not replace allocation governance.
+  Its production integrations must use `ic-memory` handles. Selecting it as the
+  standard collection implementation is a separate product decision, qualified
+  at the affected consumers. An upstream collection using checked runtime memory
+  can preserve allocation safety; a replacement collection using unmanaged
+  memory cannot claim that protection.
+- Review actual handle construction and access, including dependency re-exports.
+  Importing `Memory`, `Storable` or an upstream collection is not itself a bypass;
+  neither an import-path rule nor a direct-dependency ban proves this invariant.
+- Raw-memory infrastructure internals, isolated tests and benchmarks may use
+  scoped unmanaged memory. Document the owning boundary and purpose; such
+  evidence does not qualify a production integration. Other production bypasses
+  require a maintainer-approved exception naming the scope, reason and safety
+  qualification. Adopt this rule through a reviewed snapshot or revision-bound
+  reference; policy adoption alone does not prove consumer implementation.
+
 ## Rust workspaces and portable tooling
 
 - Directory names for repositories, workspaces, tooling and operational inputs
@@ -296,13 +501,17 @@ Consumer choices described in those guides remain subject to this baseline.
 - Provide [local developer setup](docs/local-setup.md) through explicit
   `make install-tools` and offline `make tools-check`, following the
   [required tool inventory](docs/local-setup.md#required-tool-inventory).
-  Every repository prepares the same common host, IC and Cargo-tool sets,
-  including tools it does not currently use. The host set includes pinned jq,
+  Every repository prepares the same common host and Cargo-tool sets. IC
+  executables are product selections through the existing ordered local target
+  lists; repositories without an IC executable caller need not install them.
+  The host set includes pinned jq,
   Mike Farah yq, ripgrep with PCRE2 and cloc under `.tools/host/bin`; the Cargo
-  set includes cargo-sort, cargo-sort-derives and candid-extractor under
+  set includes cargo-sort and cargo-sort-derives under
   `.tools/rust/common/bin`. Common and selected Cargo tools share versioned-slot
   receipt and byte admission; common PATH activation requires the complete set.
-  Aggregates run host, IC and Rust steps in order, stopping on
+  Candid extractor selection belongs to products that extract declarations, using
+  the selected Cargo-tool interface and publishing its admitted path explicitly.
+  Aggregates run host and Rust steps, then selected product tools, stopping on
   failure. Consumer-specific setup/check targets extend the ordered lists in
   `make/tools.mk`, not unordered aggregate prerequisites. Make/CI callers select
   their own checkout's local paths; document interactive shell PATH setup,
@@ -313,6 +522,11 @@ Consumer choices described in those guides remain subject to this baseline.
   formatter command inputs for extra workspaces/frontends instead of replacing
   the shared recipes; preserve all existing checks during adoption.
 - Shared Tooling owns common executable storage as well as installation commands.
+  Its reviewed snapshot also owns the default common tool versions and digests.
+  Adopt those catalogs with the installers; do not maintain independent default
+  copies. A consumer exception requires an explicitly selected catalog and a
+  documented reason and native qualification. Host, IC and Rust exceptions are
+  independent. Product tools, PocketIC selection and compiler policy stay local.
   Host, IC and Cargo installers share verified bundles per user across checkouts
   while retaining each repository's pinned selection. Cargo tools use the standard
   tool-build environment and exact build identities; application compiler flags
@@ -323,9 +537,12 @@ Consumer choices described in those guides remain subject to this baseline.
   bundles without storing new executable copies in the checkout. This does not
   authorize deleting
   existing installations or replacing them with a mutable sibling PATH.
-- Provide the [common local IC executable setup](docs/ic-tools.md) through
-  `make install-ic-tools` and offline `make ic-tools-check`. Keep the common tool
-  names available under the checkout's `.tools/ic/bin`, with one reviewed pin
+- Repositories using IC executables select the [local IC setup](docs/ic-tools.md) through
+  `make install-ic-tools` and offline `make ic-tools-check`, declaring the needed
+  executable names in `IC_TOOLS` before including the shared Make interface.
+  Standalone callers supply repeated `--tool NAME` arguments; no complete bundle
+  is selected implicitly. Keep selected common tool names available under the
+  checkout's `.tools/ic/bin`, with one reviewed pin
   matrix and explicit installation. Consumers own version qualification and
   scoped pin exceptions; ordinary validation never downloads tools implicitly.
   PocketIC-specific selection, provisioning, offline admission and lifecycle
@@ -336,6 +553,10 @@ Consumer choices described in those guides remain subject to this baseline.
   verified tool downloads, and explicitly qualified sibling or moving inputs.
   Run the declaration checker in CI and release gates; consumers own the chosen
   versions, approved exceptions and runtime qualification evidence.
+- Follow the [upstream maintenance and recovery rules](rules/dependency-pinning.md#maintaining-upstream-code)
+  for imported runtime and cryptographic implementations. Preserve provenance,
+  review applicable fixes, and distinguish source availability from demonstrated
+  recovery. Product-specific pins, fixtures and recovery procedures stay local.
 - Use the [standard Rust workspace layout](rules/rust-workspaces.md): a virtual
   repository-root workspace, including single-package repositories. Maintained
   packages use `crates/<package-name>/` or application-owned `apps/<app-name>/`
@@ -345,7 +566,11 @@ Consumer choices described in those guides remain subject to this baseline.
   The rule explicitly approves IcyDB's existing `crates/`, `canisters/`, `schema/`
   and `testing/` layout; adoption does not require relocating those packages.
   Repositories without Rust packages do not need a Cargo workspace.
-- Cargo workspace members inherit package versions from the root. Apply the
+- Cargo workspace members inherit package versions from the root. Preserve
+  established groupings and coordinated versions under the
+  [workspace versioning guidance](rules/rust-workspaces.md#coordinated-versions-and-workspace-boundaries);
+  prefer release batching and verified consumer adoption over another split.
+  Apply the
   [Cargo dependency rules](rules/cargo-dependencies.md): every direct dependency
   is declared in root `[workspace.dependencies]`, and every child manifest uses
   `workspace = true`, including development, build and target-specific tables.
@@ -356,6 +581,12 @@ Consumer choices described in those guides remain subject to this baseline.
   development toolchain. CI must explicitly check each advertised floor;
   documented package groups may have different floors. Do not upgrade a toolchain
   or raise MSRV without an established need and appropriate validation.
+- Consume every externally maintained IC-specific dependency through `ic-platform`,
+  including DFINITY packages. Apply the
+  [external IC dependency boundary](rules/cargo-dependencies.md#external-ic-dependency-boundary)
+  to production, build, test and tooling code, optional features and all targets.
+  Missing Platform support requires an upstream capability issue, not a new direct
+  dependency or a local replacement facade.
 - Follow the [Rust hygiene baseline](docs/principles/rust-code-hygiene.md): narrow
   visibility, documented APIs/invariants, ordinary module discovery, bounded
   fallible decoding, typed errors and `std` paths in code that requires `std`,
@@ -365,19 +596,25 @@ Consumer choices described in those guides remain subject to this baseline.
 - Rust repositories adopt the [standard formatting hook](rules/git-hooks.md):
   `make install-hooks` enables a reviewed repository-local pre-commit hook that
   auto-formats and refreshes only selected files, rejects partial staging and
-  preserves unrelated working edits. Formatting includes `cargo sort --workspace`
+  preserves unrelated working edits. Formatting includes `cargo sort --workspace --grouped`
   for root and child manifests before Rust formatting. Keep matching `fmt-check`
   sorting and Rust checks in CI and release gates;
   hook activation and independent formatting qualification are separate checks.
 - Keep shell wrappers small and declare dependencies and effects. Use the
   project's maintained implementation language for substantial tooling. Do not
   add Python tooling. Fail on invalid inputs rather than hiding broken assumptions.
+- Do not use directory paths containing carriage returns or newlines (CR/LF)
+  for checkouts, tooling, state or artifacts. Reject those inputs before trimming
+  or normalizing them, and check resolved directory aliases as well. Never repair
+  an invalid path by stripping characters: that can select a different directory.
+  This restriction does not prohibit ordinary spaces in paths.
 - CI/release tools use [reviewed snapshots](docs/consuming-snapshots.md), not symlinks
   or mutable sibling/network sources. Do not patch vendored copies; fix upstream
   or keep an explicit consumer-owned adapter outside the snapshot.
 - Portable scripts use Bash strict mode and preserve Bash 3.2 compatibility unless
   the support matrix is deliberately changed. Downloaded executables need exact
-  consumer-owned versions, pinned digests, HTTPS, verification before extraction
+  reviewed snapshot versions or explicit consumer exceptions, pinned digests,
+  HTTPS, verification before extraction
   and a version check before installation. No implicit credentials or targets.
 
 ## Host support
@@ -428,15 +665,48 @@ Consumer choices described in those guides remain subject to this baseline.
   symptom, focused evidence, smallest proposal and disposition. Identify dirty
   source separately from a committed revision. Include affected callers/hosts
   and the smallest useful verification.
-- Track upstream acceptance separately from verified consumer adoption. Resolve
-  product-specific feedback locally instead of promoting it to universal policy.
+- Track upstream acceptance separately from verified consumer adoption. Close
+  producer issues when their own delivered implementation and required checks
+  are complete; keep outstanding adoption in linked consumer-owned issues.
+  Do not keep or reopen a completed producer issue solely for fleet adoption,
+  or create a second open tracker for the same consumer obligations. The
+  [issue maintenance procedure](rules/agent-maintenance.md#issue-review-and-repair)
+  defines closure evidence and retirement of redundant coordination trackers.
+  Resolve product-specific feedback locally instead of promoting it to universal
+  policy.
   For another repository's finding, search its issues and file or update the
   matching issue under the issue authorization above. Include a concrete fix or
   patch where feasible and its actual validation results. Keep shared snapshots
   intact; repair at the source owner and adopt a reviewed committed revision.
-  Other cross-repository changes retain their separate authority.
+  Relevant repairs may proceed through the standing isolated PR workflow;
+  sibling working checkouts remain untouched.
   If issue access or a remote is unavailable, report the finding and blocker to
   the maintainer without inventing an issue URL or creating a local tracker.
 - Report the outcome, changed files, relevant verification, skipped checks,
   remaining risks and open consumer actions. State compatibility and host impact
   when relevant. Do not claim a release proves publication, adoption or deployment.
+
+### Repository handoff files
+
+- A current handoff, such as `docs/status/current.md`, is a replacement summary
+  of the state needed to resume work, not an append-only session journal. Update
+  or replace existing sections; remove completed or superseded narratives rather
+  than prepending another session report. This rule does not require creating a
+  handoff file where none is needed.
+- Aim for **50–100 physical lines**. Above **150 lines**, review and trim the
+  handoff during its next update. These are maintenance targets, not tool limits
+  or CI/release gates; preserve essential unresolved recovery and safety facts.
+- Keep accepted scope, relevant source identity and pending local work, active
+  blockers and next actions, and the latest relevant validation with its limits.
+  Link canonical issues, migration guides and detailed evidence instead of
+  copying their contents or maintaining another issue-status ledger.
+- Move completed release/PR narratives, superseded qualification and long test
+  inventories out of the required startup read. Preserve still-needed historical
+  evidence at its existing owner or a durable Git revision before removing its
+  narrative; uncommitted content is not preserved by a Git-history link. Keep
+  unresolved uncertainty and the location of recovery evidence visible. Trimming
+  prose does not authorize deleting build artifacts or the only retained evidence.
+- Do not paste final agent reports, symbol inventories, routine metric blocks or
+  command logs into the repository handoff. Keep detailed evidence with its owner;
+  link it only when relevant to resuming current work. Reuse existing evidence
+  locations and Git history rather than creating a parallel archive framework.

@@ -8,10 +8,10 @@ For the complete developer setup including jq and yq, use
 only the IC executables.
 
 ```bash
-make install-ic-tools
-make ic-tools-check
+make install-ic-tools IC_TOOLS='ic-wasm wasm-opt'
+make ic-tools-check IC_TOOLS='ic-wasm wasm-opt'
 export PATH="$PWD/.tools/ic/bin:$PATH"
-quill --version
+wasm-opt --version
 ```
 
 Installation is explicit and downloads the selected official release assets.
@@ -22,16 +22,34 @@ Quill messages or performs deployment/publication effects.
 
 ## Selected set
 
+Products declare `IC_TOOLS` before including `make/consumer.mk`, for example
+`IC_TOOLS := ic-wasm wasm-opt`. Both setup and offline checking require the same
+nonempty selection. Direct calls require repeated `--tool NAME` arguments.
+Unknown or empty selections refuse before setup; order and duplicate requests
+do not change the selected set. Unselected tools are neither downloaded nor run.
+When IC setup is registered in the common aggregate, its selection is admitted
+before common host/Cargo preparation, so a missing declaration fails early.
+
+The `didc` executable serves required Candid interfaces and their compatibility
+checks. Its presence in this bundle does not select an application encoding;
+follow the [IC Wire preference](../DRAGGINZGAME.md#ic-application-encoding) for
+controlled messages. IC Wire's generated codecs do not replace Candid IDL tools
+where an external interface requires them.
+
 The reviewed default pins live only in [ci/ic-tools.tsv](../ci/ic-tools.tsv).
 Each row specifies executable, exact
 version, native host and archive SHA-256. The digests were read from the official
 GitHub release asset metadata on 2026-10-06; the Binaryen 133 archive digests
 were checked against downloaded bytes for all three host mappings on 2026-10-10.
+ICP CLI 1.7.0 digests were reviewed against official release-asset metadata on
+2026-10-17; all other selections are unchanged. Native installer/check results
+remain source-bound qualification, separate from asset availability
+([#268 — Adopt ICP CLI 1.7.0](https://github.com/dragginzgame/shared-tooling/issues/268)).
 
 | Executable | Default version | Official release |
 | --- | --- | --- |
 | `quill` | 0.5.4 | [Quill](https://github.com/dfinity/quill/releases/tag/v0.5.4) |
-| `icp` | 1.6.0 | [ICP CLI](https://github.com/dfinity/icp-cli/releases/tag/v1.6.0) |
+| `icp` | 1.7.0 | [ICP CLI](https://github.com/dfinity/icp-cli/releases/tag/v1.7.0) |
 | `didc` | 0.6.2 | [Candid tools](https://github.com/dfinity/candid/releases/tag/didc-v0.6.2) |
 | `ic-wasm` | 0.11.1 | [ic-wasm](https://github.com/dfinity/ic-wasm/releases/tag/0.11.1) |
 | `wasm-opt` | 133 | [Binaryen](https://github.com/WebAssembly/binaryen/releases/tag/version_133) |
@@ -61,7 +79,8 @@ checks the exact version token. It retains Binaryen's runtime library beside
 
 A complete candidate is built in the [shared per-user store](local-setup.md#shared-executable-storage),
 with a lightweight `.tools/ic-set.<unique>` reference in the initiating checkout.
-Installed file hashes, host, selected pins and downloaded inputs remain in the
+Installed file hashes, host, the canonical `tools` selection, complete input pins
+and selected downloaded inputs remain in the
 shared bundle. Only after all
 tools pass does an atomic symlink replacement select `.tools/ic`. Existing
 global tools and shell profiles are untouched. Valid repeated setup is offline.
@@ -69,13 +88,14 @@ Failed or interrupted attempts retain their candidate directory and leave the
 prior selected set intact; retries create a fresh candidate. Previous sets and
 downloads are not automatically deleted. Cleanup is an explicit local action.
 
-Installation and verification consume every validated row, including a final row
-without a newline. The exact pin-file bytes remain retained as provenance.
-Reuse compares the complete validated tool/version/host/archive-checksum records
-across all supported hosts. Comments and row order do not change that selection
+Installation and verification admit the complete matrix, including a final row
+without a newline, then select only requested tools. The exact pin-file bytes
+remain retained as provenance. Reuse compares requested tools' validated
+tool/version/host/archive-checksum records across all supported hosts.
+Comments, row order and changes to unselected valid records do not change that selection
 or trigger downloads. The installed pins remain the exact installation input;
 neither the caller's pins nor installed receipts are rewritten during reuse.
-Every changed record requires explicit setup, and offline reuse still verifies
+Every changed selected record requires explicit setup, and offline reuse still verifies
 the host, installed file hashes, pinned archives, extracted executable/library
 bytes and executable versions. A changed binary and edited local receipt cannot
 authorize reuse. Changes to the caller's
@@ -96,14 +116,14 @@ when the checkout already references a verified generation in that slot.
 The installed hash receipt detects accidental byte changes; it is not a signed
 attestation against an attacker who can rewrite the checkout and receipts.
 The reviewed archive hashes and snapshot provenance establish admitted inputs.
-The native CI matrix exercises installation, version execution and a Wasm
-optimization/execution smoke on the three declared hosts. With the common IC
-set and the pinned frontend Node runtime already prepared, run
-`bash scripts/ci/qualify-wasm-opt.sh /absolute/path/to/new-evidence-directory`
-for the same offline smoke. It retains inputs and outputs and checks `-O3`,
-`-Os` and `-Oz` behavior against an unoptimized module using Node's WebAssembly
-engine. It exercises branches, integer boundaries and an IC-style reply import;
-it is not a real canister deployment or product acceptance test.
+The native CI matrix exercises installation, archive integrity, version execution
+and offline reuse on the three declared hosts. Semantic optimizer qualification
+is owned by [IC Build](https://github.com/dragginzgame/ic-build/pull/62): its native
+matrix runs real `-O3`, `-Os` and `-Oz` transforms through retained artifact
+transactions, checks repaired cache reuse and executes the transferred Wasm oracle.
+Run its local `scripts/ci/qualify-wasm-opt.sh` with an explicitly admitted optimizer
+and a new absolute evidence directory. The former Shared qualification command
+is removed; this does not replace product canister/deployment acceptance.
 Product build and deployment qualification stay with consumers;
 PocketIC compatibility and server admission belong to Testkit.
 
@@ -112,12 +132,14 @@ PocketIC compatibility and server admission belong to Testkit.
 ### PocketIC ownership handoff
 
 IC Testkit owns PocketIC-specific release selection, asset checksums, explicit
-provisioning, offline admission and server lifecycle. Its published 0.25.4 CLI
+provisioning, offline admission and server lifecycle in the
+[IC Tooling workspace](https://github.com/dragginzgame/ic-tooling/tree/main/crates/ic-testkit).
+File current capability/adoption work in IC Tooling. The earlier published 0.25.4 CLI
 setup/check and managed-launch contract passed all three native hosts in
 [owner CI](https://github.com/dragginzgame/ic-testkit/actions/runs/37901828971).
-Follow [Testkit #38](https://github.com/dragginzgame/ic-testkit/issues/38) and
-[Shared #76](https://github.com/dragginzgame/shared-tooling/issues/76) for
-owner qualification and consumer coordination. Consumers select a qualified
+The historical [Testkit #38](https://github.com/dragginzgame/ic-testkit/issues/38) and
+[Shared #76](https://github.com/dragginzgame/shared-tooling/issues/76) retain the
+original handoff evidence. Consumers select a qualified
 Testkit package; they do not duplicate its server catalog or version policy.
 
 Shared 0.2.0 removes PocketIC from the required IC matrix and removes
@@ -198,10 +220,7 @@ versions before switching. Keep overrides outside the immutable shared snapshot.
 Do not copy version constants into a second catalog or upgrade tools implicitly
 as part of baseline adoption.
 
-This script owns provisioning only. The four packages in
-[IC Host Tooling](https://github.com/dragginzgame/ic-host-tooling) own their library
-contracts: `ic-host-artifacts` owns artifact streams and inspection; `ic-host-fs`
-owns bounded filesystem reads, publication and locks; `ic-host-process` owns
-admitted executable execution; and `ic-host-tools` owns Candid extraction and IC
-response decoding. Consumer orchestration, credentials, destinations and
-measurement policy remain local.
+This script owns executable provisioning. Build and Candid extraction orchestration
+belong to IC Build; host primitives and IC interpretation belong to the Host
+crates. Both now live in IC Tooling. See the [capability boundary](https://github.com/dragginzgame/shared-tooling/blob/main/README.md#capability-ownership).
+Consumer orchestration, credentials, destinations and measurement policy remain local.

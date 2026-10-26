@@ -42,6 +42,18 @@ numeric thresholds and method-catalog machinery remain local. Module cleanup is
 an implementation procedure, not an additional audit verdict. Definition
 consolidation does not imply consumer snapshot adoption or new runtime proof.
 
+The 2026-10-21 follow-up reviews Canic's
+[CI/release integrity method](https://github.com/dragginzgame/canic/blob/4caeec25db7d81f6121db1c95ba7a2d91d319c60/docs/audits/recurring/system/release-integrity.md)
+and IcyDB's [targeted boundary-handoff review](https://github.com/dragginzgame/icydb/blob/2a3e1efa551835be8b068a9579c276796f2a6143/docs/audits/targeted/integrity/boundary-handoff-review.md).
+The generic automation trust/artifact questions now belong to the shared
+CI/release method; focused producer-to-consumer guarantee tracing extends the
+existing flow method. Product invariants, report archives, frozen method
+identities and measurement protocols stay local. These source files were clean
+at inspection; unrelated sibling work is excluded. Consumer adoption requires a
+reviewed supplying Shared revision and is not established by this local draft.
+[Canic #618 — Adopt shared CI/release integrity](https://github.com/dragginzgame/canic/issues/618) and
+[IcyDB #396 — Adopt shared focused-handoff guidance](https://github.com/dragginzgame/icydb/issues/396) own that adoption.
+
 ## Local IC tools and verification helpers
 
 The common installer combines existing Canic and IcyDB Binaryen/PocketIC setup
@@ -49,12 +61,10 @@ requirements with IC Timers' verification-before-execution checks and IC Metrics
 retained provisioning evidence. Exact default versions match the inspected
 consumers; Quill is added from the official release. Platform digests and release
 sources are recorded in [IC tools](ic-tools.md). This is setup orchestration.
-The current [IC Host Tooling](https://github.com/dragginzgame/ic-host-tooling)
-packages retain their library contracts: artifact streams and inspection in
-`ic-host-artifacts`, bounded filesystem reads/publication/locks in `ic-host-fs`,
-admitted executable execution in `ic-host-process`, and Candid extraction/IC
-response decoding in `ic-host-tools`. The inspected historical provisioning
-requirements above retain their original attribution.
+The current [capability owners](https://github.com/dragginzgame/shared-tooling/blob/main/README.md#capability-ownership) separate
+executable provisioning here, host primitives/IC interpretation in IC Host
+Tooling, and build/Candid extraction orchestration in IC Build. The inspected
+historical provisioning requirements above retain their original attribution.
 
 The local jq/yq pair extends the existing shared yq selection in
 `ci/tool-versions.env`; jq 1.8.2 digests were read from official release-asset

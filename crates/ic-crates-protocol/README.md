@@ -33,4 +33,7 @@ provider tree root. Configuration names an HTTPS provider origin, blob service,
 namespace, project and completion verifier. Parsing validates representation;
 the application authenticates delivery and verifies content before publication.
 
+Current dependency adoption is pending compatible Canic/IC Wire integration;
+see the [qualification status](https://github.com/dragginzgame/ic-crates/blob/main/docs/status/current.md).
+
 Early pre-1.0 API. Minimum required Rust: 1.91.0 (required by Blob contracts 0.47). License: MIT.

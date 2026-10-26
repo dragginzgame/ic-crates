@@ -19,6 +19,7 @@ configuration and target directory apply. The default is the Git root workspace.
 Prepared host tools beside this script's checkout take precedence over PATH.
 --check-tools checks prerequisites without inspecting a workspace or installing.
 --json emits one complete document with crate rows and totals on success.
+Each selected source path counts once, including files with identical contents.
 EOF
 }
 
@@ -56,24 +57,37 @@ if [[ "${1:-}" == --check-tools ]]; then
     exit 0
 fi
 
+resolve_directory() (
+    directory="$1"
+    [[ "$directory" == /* ]] || directory="$PWD/$directory"
+    case "$directory" in
+        *$'\n'*|*$'\r'*) echo 'error: directory contains line breaks' >&2; exit 1 ;;
+    esac
+    cd -P "$directory" || exit 1
+    case "$PWD" in
+        *$'\n'*|*$'\r'*) echo 'error: resolved directory contains line breaks' >&2; exit 1 ;;
+    esac
+    printf '%s\n' "$PWD"
+)
+
 if [[ -n "$selected_manifest" ]]; then
+    case "$selected_manifest" in
+        *$'\n'*|*$'\r'*) echo 'error: manifest path contains line breaks' >&2; exit 1 ;;
+    esac
     [[ -f "$selected_manifest" && ! -L "$selected_manifest" ]] || {
         echo 'error: selected manifest must be a regular file' >&2; exit 1;
     }
-    selected_directory="$(cd "$(dirname "$selected_manifest")" && pwd -P)"
+    selected_directory="$(resolve_directory "$(dirname "$selected_manifest")")"
     selected_manifest="$selected_directory/$(basename "$selected_manifest")"
 fi
-requested_root="${1:-${selected_directory:-$PWD}}"
+requested_root="$(resolve_directory "${1:-${selected_directory:-$PWD}}")"
 if repo_root="$(git -C "${requested_root}" rev-parse --show-toplevel 2>/dev/null)"; then
     :
-elif repo_root="$(cd "${requested_root}" 2>/dev/null && pwd)"; then
-    :
 else
-    echo "error: repository directory not found: ${requested_root}" >&2
-    exit 1
+    repo_root="$requested_root"
 fi
 
-repo_root="$(cd "$repo_root" && pwd -P)"
+repo_root="$(resolve_directory "$repo_root")"
 manifest_path="${selected_manifest:-${repo_root}/Cargo.toml}"
 case "$manifest_path" in
     "$repo_root/"*) ;;
@@ -191,17 +205,18 @@ print_counts() {
 
 # Use the same file lists for LOC and test-attribute counts.
 count_test_fns() {
-    local file_list="$1"
-    local total=0
-    local rust_file
-    local file_count
-
+    local crate_root="$1" file_list="$2" total=0 inline=0 rust_file file_count status
     while IFS= read -r rust_file; do
-        file_count=$(grep -Ec "${test_attr_pattern}" "${rust_file}" || true)
+        if file_count=$(grep -Ec "${test_attr_pattern}" "${rust_file}"); then :; else
+            status=$?
+            [[ "$status" == 1 ]] || return "$status"
+        fi
         total=$((total + file_count))
+        if [[ ! "${rust_file#"$crate_root/"}" =~ ${tests_pattern} ]]; then
+            inline=$((inline + file_count))
+        fi
     done <"$file_list"
-
-    printf "%d\n" "${total}"
+    printf '%s\t%s\n' "$total" "$inline"
 }
 
 for crate_row in "${crates[@]}"; do
@@ -226,35 +241,32 @@ for crate_row in "${crates[@]}"; do
         find_args+=(-path "$excluded_pattern" -prune -o)
     done
     find "${find_args[@]}" -type f -name '*.rs' -print0 >"$FILE_LIST_DIR/files"
-    : >"$FILE_LIST_DIR/runtime"
-    : >"$FILE_LIST_DIR/tests"
+    : >"$FILE_LIST_DIR/list"
     while IFS= read -r -d '' rust_file; do
         # cloc's --list-file format has one literal path per line.
         if [[ "$rust_file" == *$'\n'* ]]; then
             echo "error: cloc file lists cannot represent paths containing newlines" >&2
             exit 1
         fi
-        relative_file="${rust_file#"$crate_path/"}"
-        if [[ "$relative_file" =~ ${tests_pattern} ]]; then
-            printf '%s\n' "$rust_file" >>"$FILE_LIST_DIR/tests"
-        else
-            printf '%s\n' "$rust_file" >>"$FILE_LIST_DIR/runtime"
-        fi
+        printf '%s\n' "$rust_file" >>"$FILE_LIST_DIR/list"
     done <"$FILE_LIST_DIR/files"
 
-    test_loc=$(cloc --list-file="$FILE_LIST_DIR/tests" \
-        --include-lang=Rust \
-        --json 2>/dev/null \
-        | jq '.Rust.code // 0')
-
-    runtime_loc=$(cloc --list-file="$FILE_LIST_DIR/runtime" \
-        --include-lang=Rust \
-        --json 2>/dev/null \
-        | jq '.Rust.code // 0')
-
-    inline_test_fns="$(count_test_fns "$FILE_LIST_DIR/runtime")"
-    test_fns="$(count_test_fns "$FILE_LIST_DIR/tests")"
-    test_fns=$((test_fns + inline_test_fns))
+    # Count every admitted path once. cloc must not choose a representative from
+    # identical files in different runtime/test partitions.
+    cloc --list-file="$FILE_LIST_DIR/list" --include-lang=Rust \
+        --skip-uniqueness --by-file --json > "$FILE_LIST_DIR/counts.json"
+    counts="$(jq -er --arg prefix "$crate_path/" \
+        --arg tests "$tests_pattern" '
+        to_entries | map(select(.value | type == "object" and .language == "Rust"))
+        | reduce .[] as $file ({runtime:0, tests:0};
+            if ($file.value.code | type != "number" or . < 0 or floor != .)
+            then error("invalid cloc count")
+            elif ($file.key | ltrimstr($prefix) | test($tests))
+            then .tests += $file.value.code else .runtime += $file.value.code end)
+        | [.runtime, .tests] | @tsv' "$FILE_LIST_DIR/counts.json")"
+    IFS=$'\t' read -r runtime_loc test_loc <<< "$counts"
+    functions="$(count_test_fns "$crate_path" "$FILE_LIST_DIR/list")"
+    IFS=$'\t' read -r test_fns inline_test_fns <<< "$functions"
     crate_loc=$((runtime_loc + test_loc))
 
     if [[ "${crate_loc}" -gt 0 ]]; then

@@ -1,4 +1,8 @@
 # Supported Hosts And Dependencies
+<!-- Shared companions: docs/ci-change-selection.md docs/rust-toolchains.md -->
+
+For reviewed prose-only changes, use the [documentation-only CI selection](ci-change-selection.md)
+contract. Code and tooling changes retain the required native host coverage below.
 
 ## Required macOS support
 
@@ -19,7 +23,19 @@ execution, cross-compilation and available download assets do not establish
 macOS filesystem, process or deployment behavior. Report unqualified workflows
 explicitly while retaining the macOS support requirement.
 
+Native support does not impose a synchronous wait on every ordinary PR or
+authorized merge. Follow the baseline's
+[asynchronous CI cadence](../DRAGGINZGAME.md#validation-and-evidence): keep the
+matrix running, complete focused checks and review, and integrate only when
+authorized and enforced checks/reviews permit it. Report pending runs with their
+source identity; do not call them native qualification. Preserve visible failure
+reporting and an owning follow-up. Explicit synchronous requests and separate
+release/publication/deployment acceptance gates remain in force.
+
 ## Host-specific setup and commands
+
+Rust workflows can adopt the shared [toolchain preparation action](rust-toolchains.md)
+while keeping their own development/MSRV selections and qualification gates.
 
 Dependency installation and CI/deployment setup may differ by host. Document
 those differences at the owning boundary and preserve the same product
@@ -80,6 +96,13 @@ a newer commit's success does not qualify an older release. Consumers must updat
 their owned workflows when adopting this guidance; snapshot refresh alone does
 not change their concurrency settings.
 
+Routine issue acceptance can use the latest delivered version that retains and
+tests the behavior; it need not wait for cancelled superseded runs. Follow the
+[issue maintenance procedure](../rules/agent-maintenance.md#issue-review-and-repair)
+to preserve historical evidence and require an explicit version-specific reason
+for any older run kept as an active gate. This does not qualify an older release
+or weaken the current version's required native matrix.
+
 Use the [CI-health task](../tasks/ci-health.md#queued-native-jobs-and-repeated-validation)
 to diagnose persistent native queues and repeated branch/tag gates. Keep all
 required hosts and checks on the retained run. Release, publication and deployment
@@ -95,6 +118,75 @@ All three jobs also run real Prettier/Rust hook qualification and a native
 installer failure-artifact round trip, described below. These are separate
 from the offline portable suite.
 
+### Consumer Cargo tool cache
+
+The snapshot's `.github/actions/prepare-common-tools` action accepts optional
+`cache: 'true'`, `cache-save: 'true'`, `cache-extra-key` and
+`rust-tool-versions` inputs. Defaults preserve uncached installation/checking.
+For a root-layout snapshot, a consumer can replace its repeated key/restore/setup/
+save blocks with:
+
+```yaml
+- uses: ./.github/actions/prepare-common-tools
+  with:
+    cache: 'true'
+    cache-save: 'true'
+    cache-extra-key: ${{ hashFiles('ci/release-editor.env') }}
+```
+
+Prepare the selected compiler first. The action installs/checks host tools before
+computing the canonical Cargo-tool cache identity, restores only exact matching
+source-cache and Rust-generation paths, then always runs normal `install-tools`
+and `tools-check`. Cache transport failures are nonfatal; setup/admission failures
+are fatal. A two-minute cache segment download timeout limits stalled restores.
+Saving requires successful preceding steps, an enabled save input, a cache miss,
+and a push to the repository's default branch; PRs never save. There are no broad
+restore prefixes or cache-hit skips of tool admission.
+
+Include the complete consumer product-tool recipe/pin fingerprint in
+`cache-extra-key`; common tools and compiler identity are already covered. An
+explicit `rust-tool-versions` must match the catalog actually selected by the
+consumer Makefile. Cache identity is not proof of caller catalog agreement.
+Consumers needing additional acceptance before saving, such as Shared's native
+cross-checkout reuse qualification, retain their explicit cache stages. Keep
+failure-evidence collection and all native/product gates unchanged. Local action
+fixtures qualify control flow and input handling, not hosted cache speedups.
+
+### CI setup reuse and timings
+
+Shared Tooling's native jobs cache the existing Cargo source cache and physical
+Rust tool generations, including build and receipt evidence. Checkout `.tools`
+selections, user Cargo credentials and host/IC bundles are not cached. Host/IC
+setup therefore continues to exercise fresh pinned downloads on every runner.
+The cache key uses the installer's exact compiler/native/build-policy identity,
+runner image identity, Cargo tool pins and installer/checksum sources. There are
+no misses solely from comments, record order or unrelated tool pins in the
+literal common catalog. Catalogs with executable configuration, duplicate
+assignments or unsupported syntax are refused; cache
+inspection never executes them or guesses their selections. There are
+no broad restore prefixes or cross-host restores. Changed inputs or an absent
+cache use ordinary cold setup.
+
+A restored cache is only a setup optimization: every job still runs complete
+`make install-tools`, offline `make tools-check` and actual cross-checkout reuse
+qualification. Existing receipt, byte, path and lock admission remains the
+authority. Cache transport errors are nonfatal; setup and validation errors are
+not. Cache steps have a three-minute bound. Only main push jobs save caches,
+after successful setup/reuse and before the test suite, so later cancellation
+does not necessarily discard expensive preparation. PR jobs only restore.
+This follows the official [cache action](https://github.com/actions/cache)
+restore/save interface; a cache hit is not native qualification.
+
+The portable suite prints a per-fixture duration/exit-status table on success
+and failure. Failed runs retain `timings.tsv` with their ordinary temporary
+evidence. All fixtures remain sequential and all three hosts run the complete
+suite. Compare cold/warm setup and fixture timings on matching hosted inputs;
+local timings and cache fixtures do not establish a hosted speed-up or explain
+runner queue capacity.
+The IC-tool fixture also prints cleanup start, elapsed seconds and exit status
+after successful assertions. A start without an end identifies an interrupted
+cleanup; use native evidence before attributing a timeout or claiming a speed-up.
+
 Shared Tooling's portable scripts do not support Windows or non-Bash shells.
 This does not prohibit a consumer from supporting additional hosts or shells
 through its own qualified tooling.
@@ -108,6 +200,7 @@ required to run setup. Make targets and CI select this same local tool set.
 
 | Tool | Additional dependencies |
 | --- | --- |
+| Evidence download and its portable fixture | GitHub CLI, jq, unzip and SHA-256 verification; the fixture also uses zip |
 | `scripts/dev/cloc.sh` | Git, Cargo, `cloc`, `jq`, `awk`, `find`, `grep`, and `sort` |
 | `scripts/dev/cloc-siblings.sh` | Git and the same prepared tools as `cloc.sh`; read-only root workspace summaries |
 | `scripts/dev/cloc-tooling.pl` | Git, cloc, and core Perl modules including JSON::PP and Digest::SHA; no Cargo or consumer command execution |
@@ -122,17 +215,17 @@ required to run setup. Make targets and CI select this same local tool set.
 | Local IC tool setup | Bash 3.2+, `curl`, `tar`, xz/gzip, Perl, and a SHA-256 implementation; see [IC tools](ic-tools.md) |
 | Nonempty Cargo test helper | Cargo with normal libtest summaries, `awk`, and `tee` |
 | Exact release-tag checker | Git and the caller's selected exact commit/version |
-| Exact crates.io observation | Bash/curl for presence; metadata mode additionally requires jq and curl 8.4.0+ for bounded downloads |
-| `scripts/ci/run-sccache.sh` | An executable `sccache` binary |
+| Exact crates.io observation | Bash, jq and curl 8.4.0+; mandatory retained metadata with bounded downloads |
+| `scripts/ci/run-sccache.sh` | An absolute executable file selected through `SCCACHE_BIN` |
 | Snapshot verification | A SHA-256 implementation |
 | Snapshot refresh | Git, a clean Shared Tooling checkout, and a SHA-256 implementation |
 | Dependency pin checker | Git, jq, Mike Farah yq v4.47.2+; Cargo when Cargo manifests exist |
 | Workspace-version reader | Prepared Cargo, jq and Mike Farah yq v4.47.2+; explicit Cargo.toml input; no dependency resolution |
-| Release runner | GNU Make, Git, `date`, explicit consumer metadata/check targets, and Bash 3.2 |
+| Release runner | GNU Make, Git, Perl, `date`, explicit consumer metadata/check targets, and Bash 3.2 |
 | PR release delivery | The release runner prerequisites, authenticated GitHub CLI with `gh api --paginate`, jq, and Git supporting `switch`, `worktree` and `fetch --no-write-fetch-head`; see the [PR contract](releases.md#pr-delivery) |
 | Changelog finalizer | System awk with regular-expression `RS` (the declared Linux/macOS hosts); preserves historical EOF bytes without GNU `RT` |
 | Rust pre-commit hook and installer | Git, GNU Make, consumer-owned `fmt` prerequisites (Cargo/rustfmt and an exact `cargo-sort` version), Bash 3.2 and standard Unix file utilities |
-| Consumer formatting adoption checker | The hook prerequisites above, Perl-free shell utilities, and reviewed consumer Make inputs; no implicit downloads |
+| Consumer formatting adoption checker | The hook prerequisites above, Perl, and reviewed consumer Make inputs; no implicit downloads |
 | Formatter prerequisite checker | Prepared Cargo/rustfmt and the consumer's exact cargo-sort version; optional Cargo executable and `RUSTUP_TOOLCHAIN`; no installation |
 | Local lockfile transformer | Perl core only; the caller separately validates the prepared graph with Cargo |
 | Explicit tag maintenance | Git and Perl core modules; atomic push support for remote deletion; see [tag maintenance](tag-maintenance.md) |
@@ -146,13 +239,24 @@ cmp. The selected native binary must report PCRE2 support. All four Linux/macOS
 architecture mappings have substitute fixtures; only native execution qualifies
 the corresponding official binary. See [local setup](local-setup.md).
 
-The complete setup/check aggregates include the three pinned Cargo tools on
+The complete setup/check aggregates include the pinned Cargo formatter tools on
 every repository. A prepared Rust/Cargo toolchain and native build prerequisites
 are therefore required even for non-Rust consumers. The native regression jobs
 run the complete aggregate on Linux x86-64 and both macOS architectures; narrower
 CI jobs may prepare only their own declared prerequisites without claiming a
 complete developer installation. Linux ARM64 remains host-set-only because the
 IC set lacks a matching Quill asset.
+
+The standalone `scripts/ci/test-rust-tools.sh` uses substitute Cargo/compiler
+executables in its own prepared directory, including when invoked by absolute
+path from a consumer with `rust-toolchain.toml`. It borrows the source checkout's
+existing Git commit and tracked `README.md` through a read-only object reference;
+only disposable fixture refs, indexes and working files change. It creates no
+commits or tags and performs no pushes. Forbidden Git attempts are recorded and
+fail the fixture even when an expected-failure case consumes their exit status.
+Real staged hook, partial-staging, receipt and exported-input isolation checks
+remain part of this same entrypoint. This contract does not cover the separate
+release-history fixtures in Shared Tooling's full suite.
 
 The hook regression fixture also requires `jq` and the `cargo-sort` version from
 `ci/tool-versions.env` (`2.1.4`). CI installs it before offline tests; local
@@ -174,8 +278,10 @@ native execution qualifies that host.
 ## Cargo installation assessment
 
 The separate manually triggered `cargo-install-qualification.yml` workflow
-qualifies Cargo's registry binary/example mechanics on the same three native
-hosts. It records the prepared Cargo/Rust compiler identity and retains failed-build
+qualifies Cargo's common registry binary mechanics on the same three native
+hosts. Blob owns the frozen published-example case through
+[its native assessment](https://github.com/dragginzgame/ic-blob-storage/pull/80).
+It records the prepared Cargo/Rust compiler identity and retains failed-build
 evidence. The workflow leaves build duration to the GitHub Actions defaults.
 It does not extend the default portable gate or establish a new consumer installer
 contract. See the
@@ -184,7 +290,7 @@ selected fixtures, offline prerequisites and outstanding extraction boundaries.
 
 ## Installer-capable platforms
 
-The actionlint, Gitleaks, ShellCheck and yq installers contain asset mappings for
+The CI actionlint, Gitleaks and ShellCheck installers, and the host-tool yq installer, contain asset mappings for
 Linux and Darwin on x86-64 and ARM64. Branches not exercised by the repository's
 installer-download CI are install-capable, not support claims.
 
@@ -199,13 +305,12 @@ The IC toolset additionally provisions and checks native executables on all
 three CI hosts above. Offline fixtures exercise digest/version refusals, retained
 failed and interrupted setup, and atomic activation using substituted payloads;
 only the separate native installation step qualifies actual upstream binaries.
-After preparing the pinned Node runtime, the native jobs also run
-`scripts/ci/qualify-wasm-opt.sh` against that installed IC set. Its retained
-Wasm inputs/outputs exercise `-O3`, `-Os` and `-Oz` through Node's WebAssembly
-engine, including integer branches and an IC-style reply import. Evidence lives
-under `portable-fixtures/wasm-opt` for ordinary failure collection. This small
-smoke does not qualify consumer canister builds or deployment; those remain
-with the product owner.
+Semantic optimizer qualification lives in
+[IC Build](https://github.com/dragginzgame/ic-build/pull/62), whose native matrix
+exercises `-O3`, `-Os` and `-Oz` through retained artifact transactions and the
+transferred Wasm execution oracle. Shared retains archive, executable and
+installation/reuse qualification. Product canister and deployment checks remain
+with their owners.
 Each native job also selects host/IC and common Cargo tools in a second disposable
 checkout with downloads disabled and verifies identical physical installations.
 The portable fixtures cover different selections, corrupt payloads,
@@ -222,6 +327,17 @@ the selected temporary root while preserving pipeline failure status.
 The local composite action `.github/actions/retain-failure-evidence/action.yml`
 owns that path selection and uploads one `evidence.tar.gz` created by the shared
 evidence archiver, including hidden inputs and excluding `.git` metadata.
+Consumers with a product-specific collector may instead pass absolute
+`prepared-archive` and `collection-log` paths. That branch never selects tools,
+repackages evidence or runs a collector; the caller owns original collection
+status, archive safety and content qualification. Both files are required inputs,
+but a missing or final-symlink file is excluded while the other is still uploaded;
+completeness then fails after upload. Relative/multiline, glob-pattern or identical paths are
+rejected. The prepared branch runs even after a previous step fails or is
+cancelled, preserving the caller's log independently of archive creation.
+`temp-root` and `repository-root` remain required by the collecting branch only.
+Uploads use zero ZIP compression because the selected archive is already compressed.
+
 The same action collects a
 disposable negative qualification on each native host: the real IC installer
 downloads Quill and rejects an intentionally incorrect pin, then offline checking
@@ -239,27 +355,23 @@ leave no completed manifest. All evidence is retained. CI observes the failed st
 requires that invocation's completion output (an old manifest cannot qualify it),
 uploads through the common collector, downloads the exact returned artifact ID,
 and extracts the archive to check its payload against the original checksum
-manifest. Both full and compact evidence readbacks use the pinned download
-action's authenticated REST path, scoped to the current repository and run.
-Only the portable job grants `actions: read`; download digest mismatches fail
-before the independent payload checks. Before each download,
-`scripts/ci/wait-for-artifact.sh OWNER/REPO RUN_ID ARTIFACT_ID` checks the same
-run's paginated REST listing for the exact ID returned by this attempt's upload.
-It requires GitHub CLI, jq and an explicit `GH_TOKEN` with `actions: read`.
-Only absence from a successful listing is retried: six reads with 2, 4, 8, 16
-and 30 seconds of backoff. Each hosted discovery step has a two-minute timeout
-including API calls. API/authentication errors, malformed responses, expired or
-conflicting identities and exhausted discovery fail the gate. Downloads only run
-after successful discovery; their errors are not retried by this gate. A later
-visibility regression still fails the pinned downloader. No name fallback,
-other run/attempt selection, upload replay or evidence cleanup occurs.
-This addresses the repeated immediate visibility observation in
-[#63](https://github.com/dragginzgame/shared-tooling/issues/63); a local fixture
-cannot establish the service's root cause or native hosted recovery.
-The transport selection follows
-[the Blob readback report](https://github.com/dragginzgame/shared-tooling/issues/93);
-its original internal lookup failure has no proven cause, and local checks do
-not establish hosted acceptance of the new path.
+manifest. Both full and compact readbacks use `scripts/ci/download-evidence.sh`
+with the upload output ID and SHA-256, scoped to the current repository and run.
+It requires GitHub CLI, jq, unzip and an explicit `GH_TOKEN` with `actions: read`.
+Only the portable job grants that permission. Direct artifact metadata must be one
+JSON document matching the ID, run, expiry status and upload digest. The ZIP must
+match that digest and contain exactly `evidence.tar.gz`; payload checks remain
+independent.
+
+Only reported HTTP 404 responses from metadata or the exact-ID download are
+retried: six attempts with 2, 4, 8, 16 and 30 seconds of backoff. Each hosted
+readback has a three-minute timeout. Other API failures, malformed metadata,
+identity conflicts, unexpected archive members and checksum failures stop
+immediately. Every attempt remains in the destination, which must be new.
+No separate listing preflight, name fallback, upload replay or extraction of
+arbitrary ZIP paths occurs. This addresses the visibility regression tracked in
+[#158](https://github.com/dragginzgame/shared-tooling/issues/158); hosted
+qualification is still required on every native host.
 Separate checks cover a newline/colon filename's bytes and mode,
 executable state and a symlink whose target stays outside the selection. Missing logs,
 hidden candidate files, failed uploads, early fixture failures and corrupted
@@ -269,3 +381,53 @@ pass is not hosted upload evidence: qualification requires the matching run's
 successful download/verification on Linux and both macOS hosts.
 The full IC set currently excludes Linux ARM64 because its Quill release has
 no matching ARM64 asset. No translation or source build is substituted silently.
+
+## Snapshot export measurements
+
+Shared Tooling's manual [Snapshot refresh comparison workflow](https://github.com/dragginzgame/shared-tooling/blob/main/.github/workflows/snapshot-performance.yml)
+supplies comparable repeated native observations for
+[#219 — Reduce repeated snapshot work](https://github.com/dragginzgame/shared-tooling/issues/219).
+Select full lowercase commit SHAs for the before exporter, after exporter and
+one payload shared by both. Both exporter revisions must support the three fixed
+entrypoints: snapshot refresh, Rust-tool installation and release runner. The
+workflow needs those commits in the fetched repository history; it installs no
+tools and runs no release or full portable gate.
+The two runner-local integrity helpers are frozen with the common payload, so
+only the exporter blob varies. Both exporters must support those helper inputs.
+
+On each host, one warmup pair precedes six measurement pairs with alternating
+execution order. Each export starts with a fresh consumer and the same selected
+Bash/Git/checksum tools. Monotonic timings exclude checkout, consumer setup and
+verification. Every consumer passes snapshot verification, and paired receipts
+and payloads must match. `identities.txt` records commit/blob and host/tool
+identities; `samples.tsv` keeps raw ordered observations. Failed attempts retain
+logs and inputs and cannot produce `complete.txt`.
+
+`cpu.tsv` records child user/system CPU seconds for the same ordered exports,
+including descendants waited for by the exporter. Each sample also retains its
+raw `.cpu` observation. The clock uses Perl's portable `times`, with the host's
+CPU accounting resolution; zero is valid. CPU reads stay outside the unchanged
+monotonic interval, and `samples.tsv` retains its existing four-column format.
+Use the paired CPU and elapsed observations to investigate CPU work versus
+waiting or scheduling noise; neither alone identifies a syscall bottleneck or
+establishes a whole-suite speedup. Exporter, payload and harness identities stay
+explicit, so new instrumented comparisons do not relabel historical samples.
+
+The workflow packages selected observations, runner files and consumer trees
+through the canonical archiver before upload. Hidden snapshot receipts survive
+the archive round trip; source clones and Git stores are excluded. Successful
+packaging retains the archive, SHA-256 and packaging/command logs for both
+complete and incomplete measurement attempts.
+A packaging failure remains a job failure and retains any partial archive;
+it does not reconstruct a missing measurement completion receipt.
+
+From a Shared Tooling checkout, the same comparison can run locally through
+`bash scripts/distribution/measure-snapshot-refresh.sh BEFORE AFTER PAYLOAD NEW-DIRECTORY`.
+The payload supplies both runners' integrity helpers and, when present, their
+shared companion reader; its blob is recorded with the other frozen helpers.
+Select a payload containing that reader when measuring exporters that require
+it. Historical payloads remain suitable for their self-contained exporters.
+Use an absent evidence directory beneath an existing parent, with no CR/LF in
+either path. Evidence is retained on success and failure. The bounded export
+workload does not establish a whole-suite speedup; compare repeated samples
+within each host and retain the distinct Linux/macOS observations.

@@ -8,17 +8,17 @@ remain `publish = false`. The bridge's [Cargo upload API](cargo-publish.md)
 publishes client archives to an installed IC registry, a separate flow from
 publishing these tools to crates.io.
 
-The workspace's initial 0.1.0 is an unpublished development baseline. The user
-completed the 0.1.1 Git release. The current draft is 0.2.0 because renaming the
-native executable from `ic-crates-publisher` to `ic-crates` changes launch commands;
-there is one current CLI name. Manifests remain at 0.1.1 until the user releases.
+The recorded release is 0.2.1; pending 0.3.0 includes the worker and dependency
+hard cuts. Package versions remain 0.2.1 until the user releases. The selected
+Memory/Wire graph is not release-ready; see [current blockers](status/current.md).
 Preparing the repository does not change package versions, create tags, commit,
 push or upload packages.
 
 ## Preparation
 
-Follow [development setup](development.md), then complete `make ci` and Linux
-`make lint check-secrets`. `make publish-dry-run` packages and verifies both public
+For implementation, follow the [shared validation cadence](../DRAGGINZGAME.md#validation-and-evidence)
+and [focused development setup](development.md). A user-operated release requires
+complete `make ci` and Linux `make lint check-secrets`. `make publish-dry-run` packages and verifies both public
 archives without registry mutation; it accepts dirty source for review. Cargo's
 batch packager builds the CLI against the exact protocol archive staged in that
 invocation, rather than a previously published same-version copy. Normal registry
@@ -35,20 +35,24 @@ make release-minor
 make release-major
 ```
 
-The executable rename requires `release-minor` for the current 0.2.0 notes;
-later work chooses the component appropriate to its pending draft.
+The current 0.3.0 draft requires `release-minor`; later work chooses the component
+appropriate to its pending draft.
 
 All three use the same reviewed Shared Tooling runner and local metadata adapter:
 preflight and locked/tool preparation, complete native validation, metadata and
 changelog preparation, exact source-bound receipt, scoped commit, annotated tag
 and atomic branch/tag delivery to `origin/main`. Only the SemVer component differs.
-PR delivery is not enabled by this local adapter. Shared recovery selects saved
-intent before starting another release; `make release-resume VERSION=X.Y.Z`
-finishes only the retained release. Preserve all plans and build/failure artifacts.
+PR delivery is not enabled by this local adapter. Normal release commands start
+fresh from current clean committed source; they do not scan/replay historical
+plans. `make release-resume VERSION=X.Y.Z` explicitly recovers that saved attempt.
+Preserve attributable build/failure evidence and unresolved external obligations.
 
 The root Cargo manifest owns versions. The adapter updates inherited workspace
 packages, the internal protocol dependency, root lockfile, changelog and
-`docs/release.json` as one recoverable metadata transaction. It does not resolve
+`docs/release.json` with a source-bound receipt. Shared Tooling drives the
+manifest/lock/changelog transaction through the automatically admitted IC Build
+editor. Prepared and committed checks use grouped manifest ordering and the
+selected source, not a rewritten live checkout. It does not resolve
 new dependencies, publish a crate, deploy a service or delete build artifacts.
 The [shared release contract](releases.md) owns Git effects and interruption recovery.
 

@@ -3,7 +3,7 @@
 # shellcheck disable=SC2154 # Caller owns consumer, tool_root, lock and active.
 # Sourced by installers and evidence selection. No effects until a function is called.
 
-# Only explicit host/IC asset setup retries, inside curl's transient classifier.
+# Explicit host/IC/CI asset setup retries inside curl's transient classifier.
 # The retry window limits new attempts; an in-flight attempt keeps its own cap.
 tool_store_download() {
     curl --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
@@ -69,13 +69,134 @@ tool_store_resolve() {
     printf '%s\n' "$target"
 }
 
+# Admit the checkout pointer before reuse or repair. An absent pointer prints
+# nothing; an unmanaged pointer is fatal even during explicit installation.
+tool_store_active_reference() {
+    local selection
+    [[ ! -L "$tool_root" ]] || { echo 'repository .tools may not be a symlink' >&2; return 1; }
+    if [[ -L "$active" ]]; then
+        selection="$(perl -e 'my $p=readlink(shift); defined $p or exit 1; print "$p/."' "$active")" || return $?
+        selection="${selection%/.}"
+        [[ "$selection" =~ ^$store_kind-set\.[[:alnum:]]+$ ]] || {
+            printf 'unmanaged %s tool selection: %s\n' "$store_kind" "$active" >&2; return 1;
+        }
+        printf '%s\n' "$tool_root/$selection"
+    elif [[ -e "$active" ]]; then
+        printf 'refusing to replace unmanaged tool path: %s\n' "$active" >&2; return 1
+    fi
+}
+
+# Return a verified current bundle, or empty output when explicit setup is
+# needed. An unmanaged checkout pointer remains fatal, never a repair candidate.
+# Verifiers retain their own authentication, probes and diagnostics.
+tool_store_verified_selection() {
+    local verifier="$1" selection bundle
+    selection="$(tool_store_active_reference)" || return $?
+    if [[ -n "$selection" ]] &&
+        bundle="$(tool_store_resolve "$selection" "$store_slot")" &&
+        tool_store_unlocked && "$verifier" "$bundle"; then
+        printf '%s\n' "$bundle"
+    fi
+    return 0
+}
+
+# mkdir remains the atomic acquisition. Keep its diagnostic/status verbatim;
+# an observed path is not proof of a live owner or permission to remove it.
+tool_store_lock_directory() {
+    local status
+    if mkdir "$1"; then return 0; else status=$?; fi
+    if [[ -e "$1" || -L "$1" ]]; then
+        printf 'tool installation lock path already exists: %s\n' "$1" >&2
+    else
+        printf 'unable to acquire tool installation lock: %s\n' "$1" >&2
+    fi
+    return "$status"
+}
+
+# Cargo setup/admission may wait for an admitted owner of this exact slot.
+# Admission supplies busy status 75, including an immediate admitted-busy result
+# at limit zero. Setup retains its original zero-budget acquisition semantics.
+# Failed atomic acquisition is never retried: path existence cannot classify
+# mkdir's error, and another process may win after the observed owner releases.
+tool_store_wait_unlocked() {
+    local limit="$1" busy_status="${2:-1}" waited=0 started=$SECONDS owner previous='' claim=''
+    tool_store_waited=false
+    [[ "$limit" != 0 || "$busy_status" != 1 ]] || return 0
+    while [[ -e "$store_slot/install.lock" || -L "$store_slot/install.lock" ]]; do
+        tool_store_directory "$store_root" && tool_store_directory "$store_slot" || return 1
+        # Existing owners may use their caller's umask inside the admitted slot.
+        # Inspect actual access, ownership and file kinds, not a new mode policy.
+        [[ -d "$store_slot/install.lock" && ! -L "$store_slot/install.lock" &&
+           -O "$store_slot/install.lock" && -r "$store_slot/install.lock" &&
+           -w "$store_slot/install.lock" && -x "$store_slot/install.lock" &&
+           -w "$store_slot" && -x "$store_slot" ]] || {
+            [[ -e "$store_slot/install.lock" || -L "$store_slot/install.lock" ]] || continue
+            printf 'Cannot wait on inaccessible or redirected tool installation lock: %q\n' "$store_slot/install.lock" >&2
+            return 1
+        }
+        if owner="$(perl -e '
+            use Errno qw(ENOENT);
+            my ($p,$known)=@ARGV; my @lock=lstat($p);
+            @lock && -d _ && !-l _ && $lock[4]==$<
+                or die "invalid tool installation lock: $p\n";
+            my $claim="$lock[0]:$lock[1]";
+            my $record="$p/owner"; my @s=lstat($record);
+            if (!@s && $! == ENOENT && $known eq $claim) {
+                print "$claim\n"; exit 0;
+            }
+            @s && -f _ && !-l _ && $s[4]==$<
+                or die "invalid tool installation owner record: $record\n";
+            open my $f, "<", $record or do {
+                if ($! == ENOENT && $known eq $claim) { print "$claim\n"; exit 0; }
+                die "read tool installation owner: $!\n";
+            };
+            my $n=read($f, my $text, 8193);
+            defined($n) && $n<=8192 &&
+                $text =~ /\Apid=([1-9][0-9]*)\nconsumer=(\/[^\0\r\n]+)\n\z/
+                or die "malformed tool installation owner record: $record\n";
+            print "$claim\npid=$1 consumer=$2";
+            close $f or die "close tool installation owner: $!\n";
+        ' "$store_slot/install.lock" "$claim" 2>&1)"; then
+            claim="${owner%%$'\n'*}"
+            if [[ "$owner" == *$'\n'* ]]; then owner="${owner#*$'\n'}";
+            else owner="$previous"; fi
+        else
+            # An admitted owner may withdraw its record and directory between
+            # observations. Only the same physical claim may lack its record;
+            # a vanished directory goes back through atomic acquisition.
+            [[ -e "$store_slot/install.lock" || -L "$store_slot/install.lock" ]] || continue
+            printf '%s\n' "$owner" >&2
+            return 1
+        fi
+        if [[ "$limit" != 0 && "$owner" != "$previous" ]]; then
+            printf 'Waiting for tool installation slot: %q owner=%q (limit %ss)\n' "$store_slot" "$owner" "$limit" >&2
+            previous="$owner"
+        fi
+        if [[ "$waited" -ge "$limit" ]]; then
+            if [[ "$limit" == 0 ]]; then
+                printf 'tool store installation locked: %s/install.lock; retry after its owner finishes\n' "$store_slot" >&2
+            else
+                printf 'Tool installation wait timed out after %ss: %q\n' "$((SECONDS - started))" "$store_slot" >&2
+            fi
+            return "$busy_status"
+        fi
+        tool_store_waited=true
+        sleep 1 || return $?
+        waited=$((waited + 1))
+    done
+    if [[ "$tool_store_waited" == true ]]; then
+        printf 'Tool installation slot released after %ss: %q; rechecking inputs\n' "$((SECONDS - started))" "$store_slot" >&2
+    fi
+}
+
 tool_store_acquire() {
     [[ ! -L "$store_root" && ! -L "$store_slot" ]] || { echo 'redirected tool store' >&2; return 1; }
     if [[ -e "$store_root" ]]; then tool_store_directory "$store_root" || return 1; fi
     if [[ -e "$store_slot" ]]; then tool_store_directory "$store_slot" || return 1; fi
-    (umask 077; mkdir -p "$store_slot") || return 1
+    (umask 077; mkdir -p "$store_slot") || return $?
     tool_store_directory "$store_root" && tool_store_directory "$store_slot" || return 1
-    mkdir "$store_slot/install.lock" 2>/dev/null || { echo "tool store installation locked: $store_slot/install.lock" >&2; return 1; }
+    tool_store_wait_unlocked "${1:-0}" || return $?
+    tool_store_lock_directory "$store_slot/install.lock" || return $?
     store_lock="$store_slot/install.lock"
     printf 'pid=%s\nconsumer=%s\n' "$$" "$consumer" > "$store_lock/owner"
 }
@@ -126,9 +247,7 @@ tool_store_prepare_install() {
     local verifier="$1" bundle
     mkdir -p "$tool_root" || return $?
     lock="$tool_root/.$store_kind-tools.lock"
-    mkdir "$lock" 2>/dev/null || {
-        echo "$store_kind tool installation already locked: $lock" >&2; return 1;
-    }
+    tool_store_lock_directory "$lock" || return $?
     stage=''
     trap 'tool_store_finish_install "$?"' EXIT
     trap 'exit 130' INT

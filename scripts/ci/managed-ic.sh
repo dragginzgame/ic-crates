@@ -6,11 +6,23 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 root="$PWD"
 export PATH="$root/.tools/host/bin:$root/.tools/ic/bin:$root/.tools/rust/common/bin:$PATH"
 export CARGO_TARGET_DIR="$root/target"
-canic_version="$(yq -p toml -o json '.' Cargo.lock | jq -er \
-    '[.package[] | select(.name == "canic" and .source == "registry+https://github.com/rust-lang/crates.io-index")] | if length == 1 then .[0].version else error("ambiguous Canic source") end')"
+# shellcheck source=ci/product-tools.env
+source "$root/ci/product-tools.env"
 canic_tool() {
+    local canic_version
+    canic_version="$(yq -p toml -o json '.' Cargo.lock | jq -er \
+        '[.package[] | select(.name == "canic" and .source == "registry+https://github.com/rust-lang/crates.io-index")] | if length == 1 then .[0].version else error("ambiguous Canic source") end')"
     bash scripts/dev/install-rust-tools.sh --consumer "$root" --package canic-cli \
         --version "$canic_version" --bin canic --profile release "$@"
+}
+candid_tool() {
+    bash scripts/dev/install-rust-tools.sh --consumer "$root" --package candid-extractor \
+        --version "$IC_CRATES_CANDID_EXTRACTOR_VERSION" --bin candid-extractor --profile release "$@"
+}
+release_metadata_tool() {
+    bash scripts/dev/install-rust-tools.sh --consumer "$root" --package ic-build \
+        --version "$IC_CRATES_RELEASE_EDITOR_VERSION" --bin ic-build-release-metadata \
+        --features cli --profile debug "$@"
 }
 server_tool() {
     # Select the harness's direct Testkit edge, not every upstream SDK's copy.
@@ -27,22 +39,29 @@ server_tool() {
         | $metadata.packages[] | select(.id == $selected)
         | if .source == "registry+https://github.com/rust-lang/crates.io-index"
           then .version else error("Testkit tool requires released source") end')"
-    bash scripts/dev/install-rust-tools.sh --consumer "$root" --package ic-testkit \
-        --version "$version" --bin ic-testkit-server --profile release "$@"
+    bash scripts/dev/install-rust-tools.sh --consumer "$root" \
+        --package ic-testkit --version "$version" --bin ic-testkit-server \
+        --features cli --profile release "$@"
 }
 case "${1:-}" in
     install)
         canic_tool
+        candid_tool
+        release_metadata_tool
         server="$(server_tool)"
         "$server" setup --directory "$root/.tools/ic-testkit-server"
         ;;
     check)
         canic_tool --check
+        candid_tool --check
+        release_metadata_tool --check
         server="$(server_tool --check)"
         "$server" check --directory "$root/.tools/ic-testkit-server"
         ;;
     build)
         canic="$(canic_tool --check)"
+        extractor="$(candid_tool --check)"
+        export PATH="${extractor%/*}:$PATH"
         mkdir -p target/managed-builds
         attempt="$(mktemp -d "$root/target/managed-builds/attempt.XXXXXX")"
         cp apps/ic_crates/canic.toml "$attempt/canic.toml"
@@ -64,5 +83,8 @@ case "${1:-}" in
             cargo test --offline --locked -p ic-crates-tests --lib -- --ignored --nocapture --test-threads=1
         echo "Managed test evidence retained: $attempt"
         ;;
-    *) echo 'Usage: managed-ic.sh install|check|build|test' >&2; exit 2 ;;
+    metadata-editor)
+        release_metadata_tool --check
+        ;;
+    *) echo 'Usage: managed-ic.sh install|check|build|test|metadata-editor' >&2; exit 2 ;;
 esac

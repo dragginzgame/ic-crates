@@ -1,4 +1,5 @@
 # Common release commands
+<!-- Shared companions: docs/cargo-publication.md -->
 
 Every `dragginzgame` repository, including Shared Tooling and repositories without
 a publishable package, must provide these Make targets:
@@ -29,6 +30,12 @@ stages them together; neither a version file nor a changelog heading proves
 that a tag was pushed. Pre-release versions require a separately selected release plan;
 these commands must reject ambiguous or unsupported version inputs.
 
+Shared's metadata adapter replaces `VERSION` last. Failed preparation retains
+the original files and rendered candidates under the reported Git-owned scratch
+directory, including after a partial replacement. Retry uses the existing release
+reconciliation; it does not delete earlier evidence or automatically restore files.
+Successful attempts remove only their own scratch directory.
+
 ## Required workflow
 
 The default `RELEASE_DELIVERY=direct` workflow is:
@@ -48,7 +55,11 @@ The default `RELEASE_DELIVERY=direct` workflow is:
    Never infer a deployment destination or credentials.
 2. **Validate.** Run the repository's documented complete release gate against
    the selected source and dependencies. Patch, minor and major use the same
-   gate. Stop before version mutation if validation fails; retain failure logs
+   gate. Rust consumers run their existing Clippy gate before expensive builds,
+   tests and packaging, with failure stopping later stages even under parallel
+   Make. The same ordering applies to Rust deployment entrypoints under the
+   [shared validation policy](../DRAGGINZGAME.md#validation-and-evidence).
+   Stop before version mutation if validation fails; retain failure logs
    and build artifacts. Coordinated Rust crates with unchanged versions may use
    [local archive qualification](../rules/cargo-dependencies.md#qualifying-coordinated-package-archives-before-a-version-bump)
    when registry verification selects an older published dependency. This does
@@ -193,12 +204,17 @@ because they erase that independent evidence. Safe `MAKEFLAGS` selections,
 parallel execution and ordinary release variables remain supported.
 Set `SHARED_TOOLING_ROOT` for runtime runner routing to a nested reviewed snapshot;
 consumer target-specific overrides still apply to recipes.
-Keep delivery admission and metadata adapters local. Attach existing admission
-prerequisites to the four entrypoints and export cache-preparation selections
+Keep supported delivery choices and metadata adapters local. A consumer that
+supports a subset of `direct`/`pr` sets `RELEASE_DELIVERY_POLICY` before the include
+to one regular data file, with one supported mode per line. Make admission and
+standalone adapters share `check-release-delivery.sh`; see the
+[policy contract](make-interface.md).
+The canonical hook roster includes PR delivery's `release-merged-preflight`.
+Attach additional product admission prerequisites to the four entrypoints and export cache-preparation selections
 with target-specific variables; do not replace the shared recipes. For example:
 
 ```makefile
-release-patch release-minor release-major release-resume: release-delivery-check
+release-patch release-minor release-major release-resume: local-release-preflight
 release-patch release-minor release-major release-resume: export MY_RELEASE_CACHE_PREPARE := 1
 ```
 
@@ -206,8 +222,9 @@ Preserve any consumer post-run reconciliation when adopting; a prerequisites-onl
 conversion does not reproduce an operation that previously followed the runner.
 The include does not select PR delivery, add validation or metadata adapters,
 publish packages, or clean artifacts. Keep those contracts explicit. Include
-`make/release.mk`, `make/execution.mk` and `scripts/ci/check-make-execution.sh`
-in the extra inputs to `check-release-commands.sh` when testing
+`make/release.mk` (or `make/consumer.mk` for the complete common interface)
+as a root input to `check-release-commands.sh`; its declared companion closure
+supplies the execution probe, delivery checker and other dependencies when testing
 an adopting Makefile with the runner at `scripts/ci/run-release.sh`. That smoke
 checker binds `SHARED_TOOLING_ROOT` to its disposable checkout, overriding parent
 environment and ordinary Makefile assignments. It substitutes the root runner;
@@ -217,69 +234,54 @@ Direct runner invocation remains supported for specialized
 entrypoints with independently qualified behavior.
 
 The runner owns ordering, version selection, Git effects, a directory lock and
-intent-before-effect plans in the repository's Git directory. The source SHA,
-previous/candidate versions, UTC date, branch and push destination are fixed
-across resume. Durable intent begins only after validation succeeds, immediately
-before preparation may mutate release metadata. From that point, the plan is
-retained on success and failure. A stale lock requires
-inspection of its recorded owner before manual removal; never steal an active
-release lock.
+intent-before-effect plans in the repository's Git directory. Every normal
+`make release-patch`, `make release-minor` or `make release-major` starts from
+current clean, committed source and its canonical version. It never scans or
+parses historical plans. Full preflight and validation run for every fresh
+attempt; a previous plan never supplies validation or instructions to commit,
+tag or push. An occupied lock remains a live concurrency conflict: inspect its
+owner before clearing a stale lock, and never steal an active release lock.
 
-If preflight or validation fails, correct the inputs and rerun the same normal
-release target. There is no new recovery plan to resume; preflight and the complete
-validation gate run again against the current source. Consumer-owned failed logs
-and build/evidence artifacts remain in place, bound to their original attempt;
-adapters must retain them rather than overwrite them or reuse their validation.
+Durable intent begins after validation succeeds, immediately before preparation
+may mutate metadata. Use `make release-resume VERSION=X.Y.Z` to continue that
+specific attempt. Explicit recovery reads only the selected plan and preserves
+its source, version, date, staged payload and destination checks. A normal
+command is not an alias for recovery, even at unchanged HEAD.
 
-An already-retained plan stopped at `preflight` or `validate` also permits a fresh
-attempt. The runner checks that the base version and destination still agree and
-that no saved release index, preparation file set or local/remote candidate tag
-indicates possible preparation effects. It retains that plan unchanged in a unique
-`release-state/X.Y.Z.attempt.*/` directory before starting fresh preflight and
-validation. Exact resume of an early plan remains bound to its saved source and
-also repeats both gates; use the normal target after committing source fixes.
+If preflight or validation fails, fix the inputs and run the normal target again.
+The complete gate runs against current HEAD, without reusing earlier validation.
+Build artifacts and logs remain attributable to the original attempts; adapters
+must preserve that evidence across revalidation. Old plans need no archive.
+When a fresh release selects the same candidate as an old attempt, it discards
+that candidate's stale plan, staging roster and PR receipt under the release
+lock. Other historical plans are neither read nor used to admit the release.
 
 ### Source changes after saved preparation intent
 
-Normal direct release targets automatically restart a saved `prepare` attempt
-when HEAD is a newer descendant commit and the index, worktree and untracked
-source inventory are clean. The saved index tree must be empty, no preparation
-file set (`PLAN.files`, including symlinks) may exist, and the recorded branch,
-remote and exact push destination must still agree. Current canonical metadata
-must read either the saved previous version or the saved candidate.
+A normal release uses current committed metadata regardless of any earlier
+attempt's phase, source, delivery policy or malformed journal. There is no
+ancestor or staging-evidence prerequisite tied to an old plan. Actual staged,
+unstaged or untracked source still refuses before a new attempt starts.
 
-The runner archives the original plan unchanged under
-`release-state/X.Y.Z.attempt.*/`, while holding the release lock, then reads the
-**current** canonical version and applies the **requested** increment. It repeats
-preflight and the complete validation gate against current HEAD before saving
-another preparation intent. Earlier logs, receipts and build artifacts remain
-bound to their original attempt; adapters must preserve them on revalidation.
-The archived intent is superseded local preparation, not proof of successful
-release, delivery or publication.
+For example, after interrupted `0.73.1 -> 0.73.2` preparation, commit the intended
+metadata and fixes. If current metadata is `0.73.2`, `make release-patch` validates
+current HEAD and prepares `0.73.3`. It does not finish the old push or require a
+`v0.73.2` tag. If committed metadata still reads `0.73.1`, it starts a fresh
+`0.73.2` attempt. A failed fresh gate leaves metadata unchanged; retry selects
+the same next version and runs the gate again.
 
-For example, a stale `0.6.3 -> 0.6.4` prepare plan must not block a clean newer
-commit whose Cargo workspace already reads `0.6.4`. `make release-patch` archives
-that intent, validates the current checkout, and prepares `0.6.5`. If committed
-metadata still reads `0.6.3`, it validates and prepares `0.6.4` instead. Patch,
-minor and major use this same restart behavior; the saved kind does not override
-the current request after committed preparation has been superseded.
+Uncommitted preparation must be restored, committed deliberately, or continued
+with exact-version `release-resume`. The runner does not reset working files,
+un-stage input, overwrite tags, clear occupied locks or bypass branch protections.
+Missing older tags, old delivery failures and registry/publication timing do not
+block a new release. A local or remote tag for the new candidate still conflicts.
 
-This boundary depends on the consumer adapter contract: preparation changes
-**local release metadata only**. It may retain local backups, journals and
-receipts, but must not stage, commit, create tags, publish, deploy or dispatch
-other external effects. The newer clean commit records the disposition of those
-metadata changes; the runner does not claim preparation never ran or discard
-consumer transaction evidence. Consumers must reconcile any outstanding local
-transaction in preflight before permitting fresh preparation.
+### Manually committed candidate without recorded delivery
 
-At unchanged HEAD, interrupted preparation still resumes its exact saved version.
-`make release-resume VERSION=X.Y.Z` also retains exact-source recovery and never
-selects another version. Changed source during a running gate/preparation, dirty
-or divergent history, conflicting identities, staging evidence and occupied
-locks still stop the command. Plans stopped at `stage` or later retain exact
-payload and effect reconciliation. PR delivery retains its review-branch,
-worktree and external-effect recovery; it does not use this direct-only restart.
-Ordinary agent repair does not authorize executing a real release or recovery.
+Current clean, committed metadata is the base for a normal release. Missing
+historical plans, tags or GitHub Release objects do not require reconstructing
+old delivery before selecting the next version. Registry publication remains a
+separate command. A fresh release makes no claim that an older one was delivered.
 
 ### Consumer adapters
 
@@ -307,7 +309,10 @@ Document the affected workspace graphs and exact preparation commands in the
 consumer's release guide. An explicit request for that documented release
 includes this network preparation, but never dependency upgrades or lock repairs.
 Cargo's explicit offline environment/configuration settings remain authoritative.
-Ordinary validation and standalone adapter commands remain offline.
+Authorized development and validation also include separate locked source-cache
+preparation under the Cargo network policy below. Deliberately offline gates and
+standalone adapter commands retain their offline contract; a missing cache does
+not enable an implicit online retry inside them.
 Do not hard-code `--offline` onto the authorized preparation step or export an
 offline setting across both preparation and validation. `--locked` preserves
 the selected dependency graph while allowing missing inputs to be downloaded.
@@ -320,7 +325,7 @@ are separate from dependency updates that need new registry inputs.
 
 If an adapter must compile before it can read the version or run preflight,
 prepare its selected cache before compilation. Keep this within the runner's
-normal adapter dispatch: select unfinished intent first, and never add a fetch
+normal adapter dispatch: select fresh source or explicit saved recovery first; never add a fetch
 prerequisite that runs against possibly interrupted metadata before recovery
 selection. A consumer can pass an internal preparation selection from its
 release entry points to its launcher; do not infer permission from an adapter
@@ -370,8 +375,18 @@ The complete validation gate and standalone qualification commands also run thei
 offline tool checks before dependent builds/tests, even when release preparation
 was bypassed. Enforce sequencing under parallel Make with ordered recipes or real
 dependency edges; unordered sibling prerequisites do not establish order. Ordinary
-checks never install or download. A caller adds its own explicit setup command to
-the shared installer's selection diagnostic, preserving the failed status.
+tool checks never install or download tools. A caller adds its own explicit setup
+command to the shared installer's selection diagnostic, preserving the failed status.
+
+The consumer adapter also selects the admitted executable path for its children.
+Standard `make release-*` commands must work without a per-shell tool-path export.
+An installation in one process cannot export a variable into the calling shell;
+adding a setup target alone does not wire its result into the release adapter.
+Capture a successful offline check before dispatching the helper, preserving a
+nonzero status even if the check printed a plausible path. For saved-release
+checks, select against the admitted saved source or retained original lock,
+not partially prepared live metadata. Keep installation in fresh preflight after
+source/recovery admission, never in a rendering or recovery check.
 
 For adoption, prove an installed version N / selected N+1 prepares N+1 before
 builds, reuses it on retry and leaves locks, older installations and server bytes
@@ -439,7 +454,8 @@ status **75** (GNU Make reports a failed recipe/status 2), with its URL and retr
 instructions. This is pending review, not release completion: a chained
 `&& make publish` cannot proceed.
 
-After the separately authorized merge, rerun the same normal release target.
+After the separately authorized merge, run `make release-resume VERSION=X.Y.Z`
+with the same PR delivery policy.
 Merge, squash and rebase merges are accepted when GitHub's recorded merged commit
 is in the selected remote base history and its tree exactly equals the saved
 prepared tree. A merge that changes the payload, including unrelated base changes,
@@ -475,6 +491,11 @@ explicit github.com HTTPS/SSH push URLs and same-repository PRs; fork heads and
 GitHub Enterprise destinations are outside this contract. Run from an ordinary
 checkout without inherited Git directory, worktree, index or object-store overrides.
 PR attempts share the common Git directory's release lock across linked worktrees.
+Before preparation, the repository lookup must return one JSON object whose
+complete `full_name` exactly matches the captured push destination. Trailing
+newlines and malformed response shapes are rejected before shell extraction.
+Each raw lookup response is retained separately under `release-state/`, including
+failed observations followed by a successful retry.
 
 Before merging, `RELEASE_SOURCE` identifies the original validated source,
 `RELEASE_COMMIT` identifies the prepared commit once it exists, and
@@ -492,7 +513,10 @@ detached HEAD instead of applying the previous-version preparation checks.
 
 PR plans use `release-pr-plan-1` and a required `X.Y.Z.plan.pr.json` sidecar for
 repository, prepared commit, PR number, creation intent and merged commit. The
-common Git directory retains these alongside API requests/responses and
+saved identities and merged API identities must match their complete JSON
+strings; trailing newlines are rejected before shell extraction or state writes.
+Malformed input remains retained for diagnosis rather than silently normalized.
+The common Git directory retains these alongside API requests/responses and
 `release-state/X.Y.Z.merged/`. Do not delete the plan, sidecar, local release branch
 or merged checkout to unblock a retry. A changed/dirty retained checkout stops
 tagging; retain the evidence and reconcile the actual change. An interrupted or
@@ -553,8 +577,11 @@ outside immutable shared snapshots until adopting a reviewed upstream revision.
 
 ### Fixture ownership
 
-Consumer adoption runs the canonical `scripts/ci/test-release-runner.sh` suite.
-It simulates repository and release effects; its native Git delegate accepts only
+Shared Tooling owns the canonical `scripts/ci/test-release-runner.sh` regression
+suite. Consumers qualify their actual Make/metadata/logger wiring, source admission
+and evidence custody against the reviewed snapshot; they need not rerun the
+producer's exhaustive implementation suites in every ordinary CI run. The owner
+suite simulates repository and release effects; its native Git delegate accepts only
 `hash-object --stdin`, without object writes. Any attempted real Git operation
 fails the suite even if a negative case consumes its immediate failure status.
 
@@ -576,7 +603,8 @@ deleting duplicate scenarios or extracting test support:
 | Allowed release files, metadata changes, independent locks/package sets | Consumer adapter fixture | Use actual selections and verify unrelated staged/unstaged input refusal. |
 | Receipt identity, selected older `RELEASE_COMMIT`, tag/evidence binding | Consumer adapter fixture | Preserve negative identity and payload tests across recovery. |
 | Failed preparation restoration and product-specific side effects | Consumer adapter fixture | Prove its own transaction and retained evidence. |
-| Publication eligibility and registry behavior | Consumer publication fixture | Keep separate from the branch/tag release proof. |
+| Shared publication-helper source, tag, destination and registry admission | Shared publication fixture, including real local Git | Keep actual adapter refusal before upload; do not duplicate the generic eligibility matrix. |
+| Consumer publication selection and upload recovery | Consumer publication fixture | Prove exact package/registry arguments, upload status and refusal to repeat an already-present version; keep separate from branch/tag release proof. |
 
 For IC Backup and IC Blob Storage, map local assertions to these obligations
 before removing runner-only scenarios. Their receipt and package/lock checks
@@ -608,47 +636,26 @@ the contract above ([#42](https://github.com/dragginzgame/shared-tooling/issues/
 Neither policy bypasses branch protection or required reviews. Publication,
 deployment and cleanup remain separate effects.
 
-Once version preparation may have started, rerun a normal target to
-automatically reconcile the unfinished release at its saved version. The runner
-selects that intent before computing a new candidate, including when metadata
-has already been bumped. It retains the source/commit identity, UTC date,
-destination, completed phases and evidence. Uncommitted preparation remains bound
-to its saved source and kind at unchanged HEAD. A newer clean descendant commit
-can supersede direct `prepare` intent under
-[the restart contract](#source-changes-after-saved-preparation-intent), with current
-metadata selection and fresh complete validation. After the release commit exists,
-newer commits are
-allowed only on its direct descendant history, with the exact staged tree, sole
-source parent and release subject still verified. A dirty tree, changed release
-payload, competing unfinished identities, conflicting tag or destination, or an
-occupied lock stops recovery; the existence of a plan alone does not.
+Once version preparation may have started, use
+`make release-resume VERSION=X.Y.Z` to continue that exact attempt. Its source,
+version, staged payload and destination remain fixed. Dirty or conflicting
+source/ref state and occupied locks still stop recovery. An explicit resume
+never starts a second release or applies another increment after completion.
+Use a normal release target only when a fresh attempt from current clean,
+committed metadata is intended. Old plans alone cannot block that fresh path.
 
-An unchanged same-kind retry finishes only the saved release. In direct delivery, if HEAD contains
-newer committed fixes, or a different increment is explicitly requested after the
-release commit exists, the normal command first finishes the older release and
-then computes the requested increment from the actual local version. Fresh
-preflight and complete validation run against current source before preparation.
-For example, an interrupted minor release prepared `0.265.0`; after committing a
-callback fix while metadata still reads `0.265.0`, `make release-patch` reconciles
-that release, then validates and prepares `0.265.1`. It never recreates the older
-commit or tag. A failure in the new gate leaves the older release complete, keeps
-both attempts' evidence, and permits the normal target to retry the new attempt.
+Recovery observes actual local and remote state. A missing push reply does not
+prove failure: matching remote branch and tag identities complete the saved
+release without another push; failed observation refuses recovery. No tag is
+overwritten and publication remains separate.
 
-Recovery checks the saved phase against actual local and remote state. It never
-increments the prepared version again, recreates a matching release commit,
-overwrites a tag or replays a push whose outcome cannot be established. A missing
-push reply does not prove failure: matching remote branch and tag identities
-complete that release without another push; a failed remote query stops it.
-`make release-resume VERSION=X.Y.Z` remains available for explicit selection of
-only that retained release, using the same reconciliation and conflict checks;
-it never starts a next increment. Preserve
-artifacts throughout recovery; publication and cleanup remain separate.
+`Release X.Y.Z completed; plan: ...` is a success message. The plan permits
+explicit recovery checks but is not a required historical archive. A failure in
+a separately chained command does not undo successful branch/tag delivery.
 
-`Release X.Y.Z completed; retained plan: ...` is a success message. The completed
-plan is retained evidence and does not block the next release. A later failure
-from a separately chained command does not undo that successful branch/tag push.
-Package publication requires a consumer-owned publication command and an eligible
-package; do not append `make publish` automatically to the standard release flow.
+For a crates.io package using the workspace's stable version, consumers may reuse
+the [read-only publication admission helper](verification-helpers.md#read-only-cargo-publication-admission)
+while keeping upload authority, package policy and recovery local.
 
 ## Shared changelog finalization
 
@@ -671,15 +678,24 @@ rollback, receipts and exact prepared-payload checks.
 Pass the saved previous version even after package metadata has been bumped.
 Undated numbered sections at or below that version remain history. One pending
 numbered section must agree with the target; competing candidates or a target
-already dated differently are conflicts. The helper also understands the older
-`Draft` input, but maintained notes follow the numbered-draft rules. With no
-draft it creates the selected heading; it does not invent release-note content.
+already dated differently are conflicts. The selected numbered candidate must
+be the first release heading; `Draft` and misplaced candidates are rejected.
+Both `## [X.Y.Z]` and `## [X.Y.Z] - Unreleased` are accepted pending spellings.
+Release preparation writes `## [X.Y.Z] - YYYY-MM-DD` using the saved UTC release
+date before the release commit, tag and push; no manual heading edit is needed
+for the standard flow. If preparing a release manually, replace `Unreleased`
+with that date before committing/tagging/pushing the release. Unsupported
+suffixes are refused with the source line and accepted selected heading before
+any candidate output is emitted; conflicting dates and duplicate or misplaced
+candidates remain separate diagnostic causes.
+With no candidate, the first release heading must identify the saved previous
+version; the helper then inserts the selected heading without inventing content.
 
 Horizontal spaces and tabs in headings are normalized only for classification;
 an already-dated target with extra separator whitespace cannot become a second
 release entry. Retained content keeps its original bytes, including a historical
-body without a terminal newline. A draft moved from EOF gains only the separator
-needed before the following history. The helper reads the document as one awk
+body without a terminal newline. Candidates are never moved from history.
+The helper reads the document as one awk
 record using regular-expression `RS`, supported by the system awks on the host
 matrix; it does not depend on GNU awk's `RT` extension.
 
@@ -694,10 +710,16 @@ Do not silently change a consumer's refusal or recovery behavior during adoption
 
 ## Adoption and verification
 
+For a caller-admitted Cargo upload or dry run, the optional
+[publication attempt helper](cargo-publication.md) records one exact selection
+and command. It does not replace consumer registry/provenance admission or
+partial-upload recovery, and release execution never invokes it implicitly.
+
 The Makefile pattern specifies a contract; adding this document does not install
 helpers or prove consumer adoption. Consumers implement or align their targets,
 vendor a clean reviewed Shared Tooling revision with this document,
-`scripts/ci/run-release.sh`, `scripts/ci/next-release-version.sh` and any selected
+`scripts/ci/run-release.sh`, `scripts/ci/validate-release-inputs.pl`, its
+`StableVersion.pm` companion and any selected
 changelog helper, together with `scripts/ci/check-make-execution.sh`, in the
 [governance snapshot](consuming-snapshots.md), and qualify the workflow on their
 declared Linux and macOS hosts. PR adopters also include `scripts/ci/release-pr.sh`,
@@ -723,3 +745,165 @@ of live package publication or a native host release.
 Supplement effect/interruption stubs with real Git index/tree checks at staging
 boundaries. Shared Tooling's metadata fixture reuses existing history without
 creating commits and exercises the actual adapter's failed-log retention.
+
+## Cargo release candidate rendering
+
+IC Build owns manifest and lockfile candidate rendering. The calling consumer
+adapter selects its released `ic-build-release-metadata` executable through the
+consumer's offline admission interface. Before dispatching Shared's low-level
+Cargo helper, it supplies `CARGO_RELEASE_METADATA_EDITOR` as that absolute
+executable path and `CARGO_RELEASE_METADATA_MAX_BYTES` as a positive per-document
+byte allowance. The low-level helper does not install or discover tools through
+PATH or sibling checkouts. Standard release entrypoints perform the consumer's
+admitted preflight setup and path selection themselves; they must not require
+the maintainer to export these variables manually.
+
+For direct low-level invocation, explicitly prepare the pinned published package,
+then capture its offline-admitted selection before running the helper:
+
+```sh
+bash scripts/dev/install-rust-tools.sh --package ic-build --version 0.18.0 \
+  --bin ic-build-release-metadata --profile debug || exit "$?"
+CARGO_RELEASE_METADATA_EDITOR="$(bash scripts/dev/install-rust-tools.sh \
+  --package ic-build --version 0.18.0 --bin ic-build-release-metadata --profile debug \
+  --check --wait-seconds 30)" || exit "$?"
+export CARGO_RELEASE_METADATA_EDITOR
+export CARGO_RELEASE_METADATA_MAX_BYTES=8388608
+```
+
+The byte allowance above is a fixture example; consumers choose a limit for their
+own documents. Shared's Cargo adapter and saved-source context fixtures require
+these same explicit selections. Common tool setup does not install this optional
+release tool unless the consumer includes it in its local extensions. The
+published package requires Rust 1.91 or later.
+
+The explicit 30-second admission budget above is optional. Saved-source recovery
+must select the editor from that saved source's manifest/lock and feature policy,
+then preserve the installer's status: **75** means an admitted shared slot is busy
+or its bounded read-only wait timed out, not that installation is missing. Do not
+convert every failure into setup advice. Other invalid/missing inputs still fail;
+neither waiting nor retrying authorizes installation, metadata changes or a fresh
+validation gate. See [Cargo tool admission](local-setup.md#standard-cargo-tool-build-environment).
+
+Direct callers of the retired `render-cargo-workspace-version.pl` use the editor's
+`--max-input-bytes LIMIT manifest SOURCE PREVIOUS CANDIDATE [WORKSPACE_INPUT_JSON]`
+operation. Callers of `rewrite-local-lock-versions.pl` use
+`--max-input-bytes LIMIT lock LOCKFILE PREVIOUS CANDIDATE PACKAGE...`.
+Saved-source callers retain the admitted context JSON, including `source_root`;
+source/transaction custody and independent candidate checks stay with the caller.
+The Shared Cargo adapter delegates these operations using the selections above.
+
+The command uses TOML-owned literal spans and complete context admission. It
+preserves unrelated bytes, source-qualified lock references, saved-source
+identities and simple local requirement precision. Shared Tooling retains source
+admission, originals, changelog preparation, independent locked/offline Cargo
+graph checks and restoration on renderer or graph failure. Keep saved-byte
+comparison separate from parsed semantic equality at its owning boundary.
+
+## Coordinated Cargo metadata adapter
+
+`scripts/ci/cargo-release-metadata.sh prepare|check PRIMARY_PACKAGE` owns
+the reusable Cargo-only metadata flow. Adopt it as a snapshot root; its version
+reader, changelog finalizer and preparation transaction are required companions.
+It requires root `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`, workspace-inherited package versions
+and no source-less packages outside the workspace. It admits actual workspace
+and lock identities before mutation; independently versioned packages need their
+consumer-owned adapter. Existing adapters are not replaced by adoption alone.
+
+Preparation delegates installation and restoration to
+`release-metadata-transaction.sh`. Every candidate finishes rendering before any
+live file is installed. Failed attempts retain `original/` and `candidate/`
+directories under the printed preparation path.
+
+The caller supplies `RELEASE_PREVIOUS`, `RELEASE_VERSION`, `RELEASE_DATE`, prepared
+Cargo, Perl, jq, Mike Farah yq and the explicitly selected IC Build editor and
+byte allowance above. Preparation uses the locked offline graph and the editor.
+It independently parses the candidate before installation, preserves manifest layout, file modes and external lock selections,
+restores all three original files on failure and retains failure custody. It does
+not run Cargo-edit or Cargo-sort; consumer ordering gates remain separate.
+Catchable INT/TERM interruptions restore the same originals and preserve their
+exit status. Unsupported inputs refuse before installation.
+The `check` operation uses `RELEASE_COMMIT` when selected, exporting that exact
+committed source instead of reading newer working metadata. No version selection,
+fetch, tool installation, Git staging/ref mutation or publication is implicit.
+Consumer preflight and late source/index admission remain outside this helper.
+
+When `check` or `check-graph` dispatches Cargo metadata, failures retain its stdout
+(including an empty JSON file), streamed stderr, separate Cargo/logger statuses,
+the selected physical root and copies of its root `Cargo.toml`/`Cargo.lock`.
+A Cargo failure takes priority over a simultaneous logger failure; a logger
+failure also refuses an otherwise successful check. Root input copies do not freeze member manifests or Cargo
+configuration in a live workspace. A selected committed-source check additionally
+retains its exported tree. Neither path retries Cargo or repairs the lockfile.
+
+IC Metrics adopts the corrected helper from committed Shared Tooling 0.11.1
+through normal snapshot distribution, retaining its local policy in a thin adapter.
+Other Cargo consumers must retain their own file set, recovery and metadata policy
+when qualifying this adapter; it is not a fleet-wide automatic replacement.
+
+### Pure release input admission
+
+`scripts/ci/validate-release-inputs.pl version X.Y.Z` accepts canonical stable
+versions with decimal u64 components and prints those three components separated
+by tabs. It compares large values as strings, preserving integers above 2^53.
+`date YYYY-MM-DD` validates the Gregorian date (years 0001 through 9999) and
+prints its exact spelling. Both refuse extra whitespace, CR/LF and malformed
+values, perform no file IO and select no release effects. Consumer adapters can
+use this same grammar at each saved-input/receipt boundary.
+
+`next-version X.Y.Z patch|minor|major` calculates the next version with exact
+decimal arithmetic and the same u64 component ceiling. Only the incremented
+component needs headroom; lower components reset to zero for minor/major bumps.
+Overflow, invalid inputs and unsupported increments produce no candidate.
+The public `next-release-version.sh X.Y.Z patch|minor|major` entrypoint delegates
+to this calculation and returns exit 2 for invalid inputs; existing adapters do
+not need an invocation change.
+The runner admits generated and retained dates before dispatching release
+callbacks. Consumers still own metadata, selected identity, receipts and replay.
+
+## Reusing metadata preparation and evidence custody
+
+Consumers with custom metadata rendering can source
+`scripts/ci/release-metadata-transaction.sh` and call:
+
+```bash
+release_metadata_prepare "$state/$RELEASE_VERSION.prepare.XXXXXX" \
+  render_metadata verify_metadata Cargo.toml Cargo.lock CHANGELOG.md
+```
+
+`render_metadata ORIGINAL_ROOT CANDIDATE_ROOT` writes each selected candidate
+under the supplied root. `verify_metadata` validates the installed working payload.
+Callbacks must explicitly propagate every failed observation, or execute an
+independent script with its own strict shell settings; do not rely on a caller's
+`errexit` when a function is invoked in a conditional context. The helper admits
+all original files before rendering and all candidate files before installation.
+Nested relative names and spaces are supported; noncanonical paths, symlink
+traversal, non-regular files and duplicate selections refuse. Existing destination
+modes are retained.
+
+The helper owns backup, installation and caught-failure restoration only. It
+preserves originals/candidates on failure, including failed restoration, and
+prints their location before preparation. It does not promise multi-file atomicity
+or crash durability. An uncatchable interruption retains evidence for the
+consumer's existing reconciliation; this helper never decides whether to resume,
+rerender or retry. Existing pending releases must finish with their owning adapter
+before incompatible receipt formats are adopted. No receipt migration is implied.
+
+The consumer retains selected files, exact source/commit qualification, metadata
+semantics, gates, version and delivery decisions. It must hold exclusive source
+and state custody, supply a trusted temporary parent outside selected files, and
+keep callbacks within those contracts. A successful verifier must not change the
+rendered payload. The helper does not execute Git/Cargo or publication effects.
+
+`scripts/ci/release-receipts.sh` supplies atomic single-receipt write/check and
+`release_receipt_archive TEMPLATE FILE...`. Archive admits the complete old set
+before copying, preserves it before append/replacement, and retains partial
+archives on failure. Missing entries are permitted; links, non-regular entries
+and duplicate basenames refuse. Receipt schemas and multi-file relationships
+remain consumer policy. These sourceable helpers leave caller traps intact;
+preparation installs its restoration traps only inside its own subshell.
+
+Host's adoption retains its original validation receipt format and reconstruction
+of expected release bytes from the selected source. Testkit and Backup have
+additional metadata contracts; they must qualify their own callbacks and recovery
+fixtures before replacing their local preparation mechanics.

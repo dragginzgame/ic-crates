@@ -10,9 +10,8 @@ root="$PWD"
 export CARGO_TARGET_DIR="$root/target"
 export PATH="$root/.tools/host/bin:$root/.tools/ic/bin:$root/.tools/rust/common/bin:$PATH"
 files=(Cargo.toml Cargo.lock CHANGELOG.md docs/release.json)
-packages=(ic-crates-protocol canister_ic_crates_registry canister_ic_crates_blob ic-crates ic-crates-tests)
-release_backup=''
-release_had_receipt=no
+# shellcheck source=ci/product-tools.env
+source "$root/ci/product-tools.env"
 
 fail() { echo "Release metadata refused: $*" >&2; exit 1; }
 version() { bash scripts/ci/read-cargo-workspace-version.sh --stable Cargo.toml; }
@@ -36,46 +35,71 @@ prepared() {
     source_check
     [[ "$(version)" == "${RELEASE_VERSION:?}" ]] || fail 'Prepared version differs.'
     perl scripts/release/metadata.pl check "$RELEASE_SOURCE" "$RELEASE_VERSION" "${RELEASE_DATE:?}"
-    cargo metadata --offline --locked --no-deps --format-version 1 >/dev/null
+    bash scripts/ci/cargo-release-metadata.sh check ic-crates-protocol --manifest-order-grouped
 }
 committed() {
     clean
+    bash scripts/ci/cargo-release-metadata.sh check ic-crates-protocol --manifest-order-grouped
     perl scripts/release/metadata.pl check-commit "${RELEASE_COMMIT:?}" \
         "${RELEASE_SOURCE:?}" "${RELEASE_VERSION:?}" "${RELEASE_DATE:?}"
 }
-prepare() {
+# Product context projection only; IC Build owns both candidate renderers.
+# shellcheck disable=SC2329 # Callback invoked by the shared metadata transaction.
+render_metadata() {
+    local original="$1" candidate="$2" context="${2%/*}/workspace.json"
+    local manifest="${2%/*}/manifest.json" metadata="${2%/*}/metadata.json"
+    local packages=() package
+    yq -p toml -o json '.' "$original/Cargo.toml" > "$manifest" || return
+    cargo metadata --offline --locked --no-deps --format-version 1 > "$metadata" || return
+    jq -L "$root/scripts/ci" --slurpfile manifest "$manifest" \
+        --arg previous "$RELEASE_PREVIOUS" '
+        include "cargo-workspace-members";
+        {manifest: $manifest[0], members: (coordinated_members("ic-crates-protocol"; $previous)
+            | map({name, manifest_path}))}' "$metadata" > "$context" || return
+    while IFS= read -r package; do packages+=("$package"); done < <(jq -r '.members[].name' "$context")
+    "$editor" --max-input-bytes "$IC_CRATES_RELEASE_METADATA_MAX_BYTES" manifest Cargo.toml \
+        "$RELEASE_PREVIOUS" "$RELEASE_VERSION" "$context" > "$candidate/Cargo.toml" || return
+    "$editor" --max-input-bytes "$IC_CRATES_RELEASE_METADATA_MAX_BYTES" lock "$original/Cargo.lock" \
+        "$RELEASE_PREVIOUS" "$RELEASE_VERSION" "${packages[@]}" > "$candidate/Cargo.lock" || return
+    notes > "$candidate/CHANGELOG.md"
+}
+
+# shellcheck disable=SC2329 # Callback invoked by the shared metadata transaction.
+check_preparation() {
+    perl scripts/release/metadata.pl receipt "$RELEASE_SOURCE" "$RELEASE_VERSION" "$RELEASE_DATE" || return
+    prepared
+}
+
+prepare() (
     allowed
     source_check
-    local current lock_version
-    current="$(version)"
-    [[ "$current" == "${RELEASE_PREVIOUS:?}" || "$current" == "${RELEASE_VERSION:?}" ]] || fail 'Version differs from saved intent.'
+    [[ "$(version)" == "${RELEASE_PREVIOUS:?}" ]] || fail 'Version differs from saved intent.'
+    local editor receipt_backup had_receipt=no complete=false
+    editor="$(bash scripts/ci/managed-ic.sh metadata-editor)"
+    [[ ! -L docs/release.json && ! -d docs/release.json ]] || fail 'Invalid receipt path.'
     mkdir -p target
-    release_backup="$(mktemp -d "$root/target/release-preparation.XXXXXX")"
-    cp Cargo.toml Cargo.lock CHANGELOG.md "$release_backup/"
-    if [[ -f docs/release.json ]]; then cp docs/release.json "$release_backup/release.json"; release_had_receipt=yes; fi
-    # An interrupted metadata transaction has no provider/Git effects. Keep inputs
-    # for diagnosis, and restore on ordinary failures before the shared retry.
-    trap 'cp "$release_backup/Cargo.toml" Cargo.toml; cp "$release_backup/Cargo.lock" Cargo.lock; cp "$release_backup/CHANGELOG.md" CHANGELOG.md;
-          if [[ "$release_had_receipt" == yes ]]; then cp "$release_backup/release.json" docs/release.json; else rm -f docs/release.json; fi;
-          echo "Failed preparation inputs retained: $release_backup" >&2' EXIT
-    notes > "$release_backup/finalized.md"
-    perl scripts/release/metadata.pl set-version "$RELEASE_PREVIOUS" "$RELEASE_VERSION"
-    lock_version="$(yq -p toml -o json '.' Cargo.lock | jq -er \
-        '[.package[] | select(.source == null) | .version] | unique | if length == 1 then .[0] else error("mixed local versions") end')"
-    if [[ "$lock_version" == "$RELEASE_PREVIOUS" ]]; then
-        perl scripts/ci/rewrite-local-lock-versions.pl Cargo.lock "$RELEASE_PREVIOUS" "$RELEASE_VERSION" "${packages[@]}" > "$release_backup/next.lock"
-        mv "$release_backup/next.lock" Cargo.lock
-    else
-        [[ "$lock_version" == "$RELEASE_VERSION" ]] || fail 'Lock version differs from saved intent.'
+    receipt_backup="$(mktemp -d "$root/target/release-receipt.XXXXXX")"
+    if [[ -f docs/release.json ]]; then
+        cp -p docs/release.json "$receipt_backup/release.json"
+        had_receipt=yes
     fi
-    mv "$release_backup/finalized.md" CHANGELOG.md
-    cargo sort --workspace
-    cargo metadata --offline --locked --no-deps --format-version 1 >/dev/null
-    perl scripts/release/metadata.pl receipt "$RELEASE_SOURCE" "$RELEASE_VERSION" "$RELEASE_DATE"
-    prepared
-    trap - EXIT
-    echo "Preparation inputs retained: $release_backup"
-}
+    # Shared owns rollback of the three Cargo inputs. This product owns only
+    # restoration of its optional receipt, which is not a stock Cargo document.
+    trap 'status=$?; trap - EXIT;
+        if [[ "$complete" != true ]]; then
+            if [[ "$had_receipt" == yes ]]; then cp -p "$receipt_backup/release.json" docs/release.json || status=1;
+            else rm -f docs/release.json || status=1; fi;
+            [[ "$status" != 0 ]] || status=1;
+        fi;
+        echo "Receipt preparation evidence retained: $receipt_backup" >&2;
+        exit "$status"' EXIT
+    # shellcheck source=scripts/ci/release-metadata-transaction.sh
+    source "$root/scripts/ci/release-metadata-transaction.sh"
+    release_metadata_prepare "$root/target/release-preparation.XXXXXX" \
+        render_metadata check_preparation Cargo.toml Cargo.lock CHANGELOG.md
+    complete=true
+)
+
 
 [[ $# == 1 ]] || fail 'One adapter operation is required.'
 case "$1" in

@@ -2,6 +2,9 @@
 
 ## [0.3.0]
 
+- Adopt Shared Tooling 0.26.18 as one verified snapshot, including feature-aware Testkit setup, explicit IC tools and grouped production/test dependency declarations.
+- Use the prepared IC Build editor and shared transaction for release metadata; retain exact source receipts, grouped committed-source checks and explicit release recovery.
+
 - Select Rust 1.99.1 for development and matching CI checks.
 
 - Select published Blob/contracts 0.47.1, Host FS/Process and Testkit 0.68.5, Memory 0.51.3 and IcyDB 0.284.1; integration remains pending compatible Canic Memory and IC Wire adapters.

@@ -38,7 +38,7 @@ unrelated behavior.
 
 At handoff, report:
 
-- files touched and approximate line delta;
+- files touched and scoped metrics under the [change-reporting rules](../../rules/change-reporting.md);
 - primary delivery areas crossed;
 - whether width came from semantics or mechanical propagation; and
 - whether the implementation became simpler, stayed neutral, or became more
@@ -51,28 +51,28 @@ change.
 
 ## Cleanup reporting
 
-Build the deletion inventory from the actual diff, including declarations in
-deleted files. In the final response to the maintainer in the Codex app only,
-list every removed function, method and type, public or private,
-with its former file or module, removal reason and replacement when applicable.
-Use exact names so the maintainer can identify what disappeared and why; a
-summary such as "removed legacy helpers" or a symbol count is insufficient.
-Group entries with the same reason if useful, while enumerating every name.
-Label moves and renames explicitly so they do not imply behavior was deleted.
-Do not put this inventory in repository files, changelogs, audit reports, commit
-messages, PRs or issues. Their ordinary summaries still explain meaningful public
-API removals, changed behavior and required consumer actions.
+Apply the [canonical reporting contract](../../rules/change-reporting.md): separate
+genuinely created and deleted functions, methods and types under **symbol changes**,
+with counts and compactly grouped identities. Omit inventories and counts for
+moves, renames and edits; summarize structural cleanup by outcome. Keep the
+created/deleted inventory only in the final Codex app handoff. Physical line churn and semantic deletion
+counts answer different questions; neither substitutes for the other. The same
+rule owns the required Rust/type/documentation metrics and their counting units.
 
 ## Validation
 
 Run the narrowest evidence that matches the changed risk automatically while
-developing. Before delivering a completed code change as ready, run the owning
-repository's documented full validation suite under the baseline's standing
-authority. Reuse passing results for unchanged inputs; further changes require
-the affected checks again. Documentation-only changes need link, instruction
-consistency and diff checks. Inspection alone does not authorize a full suite,
-and release execution still requires its own explicit request. Record what
-passed and what was not run; a progress update is not a completed delivery.
+developing and before handoff, following the
+[canonical validation policy](../../DRAGGINZGAME.md#validation-and-evidence).
+Full local gates need release or explicit-check authority. Ordinary PR delivery
+and authorized merges use asynchronous hosted integration/native CI unless
+explicitly requested otherwise; enforced checks and reviews still apply.
+Reuse passing results for unchanged inputs; further changes require the affected
+checks again. Documentation-only changes need link, instruction consistency and
+diff checks. Report pending runs and their exact source honestly, retain visible
+failure reporting and an owning follow-up, and preserve separate release,
+publication, deployment and issue-acceptance gates. A progress update is not a
+completed delivery.
 
 Tests protect maintained behavior and trust boundaries, not incidental
 implementation shape. Avoid repeating equivalent assertions through every
